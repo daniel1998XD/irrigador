@@ -1,36 +1,36 @@
 // src/app/api/humidity/route.js
 
-// ... (seus imports continuam os mesmos)
-import { NextResponse } from 'next/server';
-import dbConnect from '@/lib/dbConnect';
-import PlantProfile from '@/models/plantProfile';
-import WateringCommand from '@/models/wateringCommand';
-import TelegramBot from 'node-telegram-bot-api';
-
-const token = process.env.TELEGRAM_BOT_TOKEN;
-const bot = new TelegramBot(token);
-
+// ... (imports continuam os mesmos)
 
 export async function POST(request) {
   await dbConnect();
   try {
     const { humidity } = await request.json();
     
+    // --- DEBUG LOG 1: VERIFICAR O DADO RECEBIDO ---
+    console.log(`[DEBUG] Umidade recebida na API: ${humidity}, Tipo: ${typeof humidity}`);
+
     if (humidity === undefined) {
       return NextResponse.json({ error: 'Umidade não fornecida' }, { status: 400 });
     }
-
-    console.log(`[SIMULAÇÃO] Umidade recebida: ${humidity}%`);
     
-    let commandGenerated = false;
     const profiles = await PlantProfile.find({});
+
+    // --- DEBUG LOG 2: VERIFICAR OS PERFIS ENCONTRADOS ---
+    console.log(`[DEBUG] Perfis encontrados no banco: ${profiles.length}`);
+    // Se o log acima mostrar "0", este é o seu problema!
+
+    let commandGenerated = false;
     for (const profile of profiles) {
+      // --- DEBUG LOG 3: VERIFICAR A COMPARAÇÃO ---
+      console.log(`[DEBUG] Comparando: Umidade recebida (${humidity}) < Umidade Mín. do Perfil "${profile.name}" (${profile.minHumidity})?`);
+      
       if (humidity < profile.minHumidity) {
+        console.log(`[DEBUG] CONDIÇÃO VERDADEIRA! Gerando comando.`);
         const pendingCommand = await WateringCommand.findOne({ executed: false });
         if (!pendingCommand) {
           await WateringCommand.create({ duration: profile.wateringDuration });
           bot.sendMessage(profile.chatId, `[SIMULAÇÃO] Atenção! Umidade baixa (${humidity}%). Rega automática iniciada.`);
-          console.log(`[SIMULAÇÃO] Comando de rega criado para ${profile.name}.`);
           commandGenerated = true;
         }
       }
