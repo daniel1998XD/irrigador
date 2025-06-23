@@ -1,7 +1,11 @@
-// src/app/api/humidity/route.js
+import { NextResponse } from 'next/server';
+import dbConnect from '@/lib/dbConnect';
+import PlantProfile from '@/models/plantProfile';
+import WateringCommand from '@/models/wateringCommand';
+import TelegramBot from 'node-telegram-bot-api';
 
-// ... (imports continuam os mesmos)
-
+const token = process.env.TELEGRAM_BOT_TOKEN;
+const bot = new TelegramBot(token);
 export async function POST(request) {
   await dbConnect();
   try {
