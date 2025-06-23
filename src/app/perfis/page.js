@@ -50,6 +50,11 @@ async function addProfile(formData) {
   revalidatePath('/perfis');
 }
 
+// Função Server Component principal
+export default async function PerfisPage() {
+  await dbConnect();
+  const profiles = await PlantProfile.find({}).lean();
+
   return (
     <main style={{ fontFamily: 'sans-serif', maxWidth: '800px', margin: '50px auto' }}>
       <Link href="/" style={{ color: '#0070f3' }}>&larr; Voltar para o Simulador</Link>
