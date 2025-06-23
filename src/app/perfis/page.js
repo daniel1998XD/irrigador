@@ -4,37 +4,51 @@ import { revalidatePath } from 'next/cache';
 import Link from 'next/link';
 
 // Esta é uma Server Component, ela pode buscar dados diretamente.
-export default async function PerfisPage() {
+// Dentro de src/app/perfis/page.js
+
+// ... (o resto do seu código, como a função PerfisPage, continua igual)
+
+// Esta é a Server Action. Ela executa APENAS no servidor.
+async function addProfile(formData) {
+  "use server";
+
+  const name = formData.get('name');
+  const minHumidityStr = formData.get('minHumidity');
+  const wateringDurationStr = formData.get('wateringDuration');
+  const chatId = process.env.YOUR_TELEGRAM_CHAT_ID || '00000000'; 
   
-  // Busca os perfis existentes no banco para listá-los
-  await dbConnect();
-  const profiles = await PlantProfile.find({}).sort({ name: 1 });
+  // --- VALIDAÇÃO DOS DADOS ---
+  const minHumidity = Number(minHumidityStr);
+  const wateringDuration = Number(wateringDurationStr);
 
-  // Esta é uma Server Action. Ela executa APENAS no servidor.
-  async function addProfile(formData) {
-    "use server"; // Mágica do Next.js!
+  if (isNaN(minHumidity) || isNaN(wateringDuration)) {
+    console.error("Erro de validação: Umidade ou Duração não são números válidos.");
+    // Idealmente, você retornaria uma mensagem de erro para a interface aqui.
+    // Por enquanto, vamos apenas impedir a execução.
+    return; 
+  }
 
-    // 1. Pega os dados do formulário
-    const name = formData.get('name');
-    const minHumidity = formData.get('minHumidity');
-    const wateringDuration = formData.get('wateringDuration');
-    
-    // Um chatId fixo para o exemplo, substitua pelo seu se necessário
-    const chatId = process.env.YOUR_TELEGRAM_CHAT_ID || '00000000'; 
-    // OBS: Você precisará adicionar seu Chat ID nas variáveis de ambiente na Vercel
-
-    // 2. Conecta ao banco e cria o novo perfil
+  // --- BLOCO TRY...CATCH PARA CAPTURAR ERROS ---
+  try {
     await dbConnect();
     await PlantProfile.create({
       name,
-      minHumidity: Number(minHumidity),
-      wateringDuration: Number(wateringDuration),
+      minHumidity,
+      wateringDuration,
       chatId
     });
 
-    // 3. Limpa o cache para que a lista seja atualizada na tela
-    revalidatePath('/perfis');
+    console.log(`Perfil "${name}" criado com sucesso!`);
+
+  } catch (error) {
+    // Se algo der errado ao salvar no banco, o erro será capturado aqui.
+    console.error("ERRO AO CRIAR PERFIL NO BANCO:", error);
+    // Isso vai mostrar o erro exato nos logs da Vercel sem quebrar a aplicação.
   }
+
+  // Limpa o cache para que a lista seja atualizada na tela
+  revalidatePath('/perfis');
+}
 
   return (
     <main style={{ fontFamily: 'sans-serif', maxWidth: '800px', margin: '50px auto' }}>
