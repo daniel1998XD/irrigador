@@ -75,8 +75,7 @@ export default async function PerfisPage() {
               </div>
             ))
           ) : (
-            <p>Nenhum perfil cadastrado ainda.</p>
-            <p>Nenhum perfil cadastrado ainda.</p>
+            <p>Nenhum perfil cadastrado ainda!</p>
           )}
         </div>
       </div>
