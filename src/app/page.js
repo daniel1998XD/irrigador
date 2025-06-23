@@ -1,16 +1,24 @@
 // src/app/page.js
 
-"use client"; // Diretiva OBRIGATÓRIA para usar interatividade (hooks, eventos)
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link'; // 1. IMPORTAR O LINK
+// Adicione useEffect aos seus imports do React
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+
 export default function SimulationPage() {
-  // Estados para controlar a página
-  const [humidity, setHumidity] = useState(50); // Valor inicial do slider
-  const [loading, setLoading] = useState(false); // Para saber se estamos esperando uma resposta
-  const [responseMessage, setResponseMessage] = useState(''); // Mensagem de feedback do servidor
+  // Nosso novo estado para controlar a montagem no cliente
+  const [isMounted, setIsMounted] = useState(false);
 
-  // Função que será chamada quando o botão for clicado
+  const [humidity, setHumidity] = useState(50);
+  const [loading, setLoading] = useState(false);
+  const [responseMessage, setResponseMessage] = useState('');
+
+  // Este hook só roda no cliente, uma única vez, após a primeira renderização
+  useEffect(() => {
+    setIsMounted(true);
+  }, []); // O array vazio [] garante que ele rode apenas uma vez
+
   const simulateHumidityReport = async () => {
     setLoading(true);
     setResponseMessage('Enviando dados...');
@@ -21,31 +29,29 @@ export default function SimulationPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ humidity: humidity }), // Envia a umidade atual do slider
+        body: JSON.stringify({ humidity: humidity }),
       });
-
       const result = await response.json();
-
       if (!response.ok) {
-        // Se a resposta da API for um erro (status 4xx ou 5xx)
         throw new Error(result.error || 'Ocorreu um erro na API');
       }
-      
-      // Define a mensagem de feedback com base na resposta da API
       setResponseMessage(`Sucesso: ${result.message || JSON.stringify(result)}`);
-
     } catch (error) {
-      // Se houver um erro de rede ou na lógica da requisição
       setResponseMessage(`Erro na simulação: ${error.message}`);
     } finally {
-      // Garante que o estado de 'loading' seja desativado no final
       setLoading(false);
     }
   };
 
+  // Se o componente ainda não foi montado no cliente, não renderizamos nada
+  // para garantir que o servidor e o cliente inicial sejam idênticos.
+  if (!isMounted) {
+    return null;
+  }
+
+  // Após a montagem, renderizamos a página completa
   return (
     <main style={{ fontFamily: 'sans-serif', maxWidth: '600px', margin: '50px auto', textAlign: 'center' }}>
-      {/* 2. ADICIONAR O LINK AQUI */}
       <div style={{ marginBottom: '20px' }}>
         <Link href="/perfis" style={{ color: '#0070f3', fontSize: '1.1em' }}>
           Gerenciar Perfis de Plantas &rarr;
@@ -64,14 +70,14 @@ export default function SimulationPage() {
           min="0"
           max="100"
           value={humidity}
-          onChange={(e) => setHumidity(Number(e.target.value))} // Atualiza o valor quando o slider é movido
+          onChange={(e) => setHumidity(Number(e.target.value))}
           style={{ width: '100%' }}
         />
       </div>
 
       <button
         onClick={simulateHumidityReport}
-        disabled={loading} // O botão fica desabilitado durante o envio
+        disabled={loading}
         style={{
           padding: '12px 24px',
           fontSize: '1em',

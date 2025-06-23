@@ -9,46 +9,43 @@ import Link from 'next/link';
 // ... (o resto do seu código, como a função PerfisPage, continua igual)
 
 // Esta é a Server Action. Ela executa APENAS no servidor.
+// ...
 async function addProfile(formData) {
   "use server";
 
+  // Aqui pegamos os dados do formulário PELO NOME DO CAMPO
   const name = formData.get('name');
-  const minHumidityStr = formData.get('minHumidity');
-  const wateringDurationStr = formData.get('wateringDuration');
+  const minHumidity = formData.get('minHumidity');
+  const wateringDuration = formData.get('wateringDuration');
   const chatId = process.env.YOUR_TELEGRAM_CHAT_ID || '00000000'; 
-  
-  // --- VALIDAÇÃO DOS DADOS ---
-  const minHumidity = Number(minHumidityStr);
-  const wateringDuration = Number(wateringDurationStr);
 
-  if (isNaN(minHumidity) || isNaN(wateringDuration)) {
-    console.error("Erro de validação: Umidade ou Duração não são números válidos.");
-    // Idealmente, você retornaria uma mensagem de erro para a interface aqui.
-    // Por enquanto, vamos apenas impedir a execução.
+  const minHumidityNum = Number(minHumidity);
+  const wateringDurationNum = Number(wateringDuration);
+
+  if (isNaN(minHumidityNum) || isNaN(wateringDurationNum)) {
+    console.error("Erro de validação: Umidade ou Duração não são números.");
     return; 
   }
 
-  // --- BLOCO TRY...CATCH PARA CAPTURAR ERROS ---
   try {
     await dbConnect();
+    // E aqui usamos os mesmos nomes para criar o objeto no banco
     await PlantProfile.create({
-      name,
-      minHumidity,
-      wateringDuration,
-      chatId
+      name: name,
+      minHumidity: minHumidityNum,
+      wateringDuration: wateringDurationNum,
+      chatId: chatId
     });
 
     console.log(`Perfil "${name}" criado com sucesso!`);
 
   } catch (error) {
-    // Se algo der errado ao salvar no banco, o erro será capturado aqui.
     console.error("ERRO AO CRIAR PERFIL NO BANCO:", error);
-    // Isso vai mostrar o erro exato nos logs da Vercel sem quebrar a aplicação.
   }
 
-  // Limpa o cache para que a lista seja atualizada na tela
   revalidatePath('/perfis');
 }
+//...
 
 // Função Server Component principal
 export default async function PerfisPage() {

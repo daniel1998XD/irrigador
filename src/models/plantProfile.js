@@ -1,10 +1,11 @@
-const mongoose = require('mongoose');
-const Schema = mongoose.Schema;
+import mongoose from 'mongoose';
 
-const wateringPresetSchema = new Schema({
-  presetName: { type: String, required: true, unique: true },
-  moistureThreshold: { type: Number, required: true }, // Limiar de umidade para iniciar a rega
-  wateringDuration: { type: Number, required: true }  // Duração da rega em segundos
+const plantProfileSchema = new mongoose.Schema({
+  // Garanta que os nomes aqui são os mesmos que usaremos no formulário
+  name: { type: String, required: true },
+  minHumidity: { type: Number, required: true },
+  wateringDuration: { type: Number, required: true },
+  chatId: { type: String, required: true }
 });
 
-module.exports = mongoose.model('WateringPreset', wateringPresetSchema);
+export default mongoose.models.PlantProfile || mongoose.model('PlantProfile', plantProfileSchema);
