@@ -3,7 +3,7 @@
 "use client"; // Diretiva OBRIGATÓRIA para usar interatividade (hooks, eventos)
 
 import { useState } from 'react';
-
+import Link from 'next/link'; // 1. IMPORTAR O LINK
 export default function SimulationPage() {
   // Estados para controlar a página
   const [humidity, setHumidity] = useState(50); // Valor inicial do slider
@@ -45,6 +45,13 @@ export default function SimulationPage() {
 
   return (
     <main style={{ fontFamily: 'sans-serif', maxWidth: '600px', margin: '50px auto', textAlign: 'center' }}>
+      {/* 2. ADICIONAR O LINK AQUI */}
+      <div style={{ marginBottom: '20px' }}>
+        <Link href="/perfis" style={{ color: '#0070f3', fontSize: '1.1em' }}>
+          Gerenciar Perfis de Plantas &rarr;
+        </Link>
+      </div>
+      
       <h1>Simulador de Sensor de Umidade</h1>
       
       <div style={{ margin: '40px 0' }}>
