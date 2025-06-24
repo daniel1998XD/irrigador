@@ -39,7 +39,7 @@ async function handleCommand(message) {
         }
         const [name, minHumidity, wateringDuration] = params;
         await PlantProfile.create({ name, minHumidity: parseInt(minHumidity), wateringDuration: parseInt(wateringDuration), chatId });
-        bot.sendMessage(chatId, `Perfil "${name}" adicionado com sucesso!`);
+        bot.sendMessage(chatId, `Perfil "${name}" adicionado com sucesso.`);
     }
     else if (text.startsWith('/listarperfis')) {
         const profiles = await PlantProfile.find({ chatId });
