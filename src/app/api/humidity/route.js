@@ -40,8 +40,8 @@ export async function POST(request) {
           duration: defaultProfile.wateringDuration,
           plantProfileId: defaultProfile._id
         });
-        bot.sendMessage(defaultProfile.chatId, `Atenção! Umidade da planta padrão "${defaultProfile.name}" está baixa (${humidity}%). Rega automática iniciada.`);
-        return NextResponse.json({ message: 'Umidade baixa, comando de rega gerado!' });
+        bot.sendMessage(defaultProfile.chatId, `Atenção//! Umidade da planta padrão "${defaultProfile.name}" está baixa (${humidity}%). Rega automática iniciada.`);
+        return NextResponse.json({ message: 'Umidade baixa, comando de rega gerado//!' });
       }
     }
     

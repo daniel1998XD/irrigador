@@ -9,10 +9,8 @@ const bot = new TelegramBot(token);
 
 // Função para processar os comandos
 function escapeMarkdown(text) {
-    // Esta lista contém os caracteres que o Telegram V2 Markdown considera especiais.
-    const specialChars = ['_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!'];
-    // A mágica acontece aqui: para cada caractere especial, substituímos por ele mesmo com uma barra antes.
-    return text.toString().replace(new RegExp(`[${specialChars.join('\\')}]`, 'g'), '\\$&');
+  const specialChars = ['_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!']; // <--- ADICIONAMOS O '!' AQUI
+  return text.toString().replace(new RegExp(`[${specialChars.join('\\')}]`, 'g'), '\\$&');
 }
 async function handleCommand(message) {
     const text = message.text;
@@ -39,7 +37,7 @@ async function handleCommand(message) {
         }
         const [name, minHumidity, wateringDuration] = params;
         await PlantProfile.create({ name, minHumidity: parseInt(minHumidity), wateringDuration: parseInt(wateringDuration), chatId });
-        bot.sendMessage(chatId, `Perfil "${name}" adicionado com sucesso.`);
+        bot.sendMessage(chatId, `Perfil "${safeName}" adicionado com sucesso\\!`);
     }
     else if (text.startsWith('/listarperfis')) {
         const profiles = await PlantProfile.find({ chatId });
@@ -132,7 +130,7 @@ async function handleCommand(message) {
             // 2. Define APENAS o perfil escolhido como padrão.
             await PlantProfile.findByIdAndUpdate(profile._id, { isDefault: true });
 
-            bot.sendMessage(chatId, `✅ Perfil "${profile.name}" definido como padrão para a rega automática!`);
+            bot.sendMessage(chatId, `✅ Perfil "${profile.name}" definido como padrão para a rega automática//!`);
 
         } catch (error) {
             console.error("Erro no comando /setardefault:", error);
@@ -163,7 +161,7 @@ async function handleCommand(message) {
                 plantProfileId: profile._id // Salva a referência ao perfil
             });
 
-            bot.sendMessage(chatId, `Comando de rega manual para "${profile.name}" enviado!`);
+            bot.sendMessage(chatId, `Comando de rega manual para "${profile.name}" enviado//!`);
 
         } catch (error) {
             console.error("Erro no comando /regar:", error);
