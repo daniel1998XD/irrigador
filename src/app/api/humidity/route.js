@@ -33,8 +33,12 @@ export async function POST(request) {
         console.log(`[DEBUG] CONDIÇÃO VERDADEIRA! Gerando comando.`);
         const pendingCommand = await WateringCommand.findOne({ executed: false });
         if (!pendingCommand) {
-          await WateringCommand.create({ duration: profile.wateringDuration });
-          bot.sendMessage(profile.chatId, `[SIMULAÇÃO] Atenção! Umidade baixa (${humidity}%). Rega automática iniciada.`);
+          await WateringCommand.create({ 
+            duration: profile.wateringDuration,
+            plantProfileId: profile._id 
+          });
+          
+          bot.sendMessage(profile.chatId, `Atenção! Umidade da planta "${profile.name}" está baixa (${humidity}%). Rega automática iniciada.`);
           commandGenerated = true;
         }
       }
