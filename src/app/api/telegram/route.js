@@ -123,7 +123,7 @@ async function handleCommand(message) {
     else if (text === '/meuid') {
         bot.sendMessage(chatId, `Seu ID de Chat para login na web é:\n\n\`\`\`${chatId}\`\`\`\n\nCopie este número e cole-o na página de login.`);
     }
-    else if (text.startsWith('/regar ')) {
+    else if (text.startsWith('/regar')) {
         const plantNameToWater = text.substring(7).trim(); // Pega o nome da planta do comando
 
         if (!plantNameToWater) {
