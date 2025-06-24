@@ -30,8 +30,7 @@ async function handleCommand(message) {
 \`/meuid\` - Mostra seu ID para login na web.
 \`/regar <Nome da Planta>\` - Aciona uma rega manual para uma planta.`;
 
-        // Usamos MarkdownV2 para uma formatação mais robusta
-        bot.sendMessage(chatId, welcomeMessage, { parse_mode: "MarkdownV2" });
+        bot.sendMessage(chatId, welcomeMessage);
     }
     else if (text.startsWith('/addperfil')) {
         const params = text.substring(11).split(';');
@@ -93,34 +92,34 @@ async function handleCommand(message) {
         }
     }
     else if (text.startsWith('/plantapadrao')) {
-        const plantNameToSetDefault = text.substring(14).trim();
+    const plantNameToSetDefault = text.substring(14).trim(); 
 
-        if (!plantNameToSetDefault) {
-            return bot.sendMessage(chatId, "Formato inválido. Use: /plantapadrao <Nome da Planta>");
-        }
-
-        try {
-            // Primeiro, verifica se o perfil que o usuário quer definir como padrão realmente existe e pertence a ele.
-            const profile = await PlantProfile.findOne({ name: plantNameToSetDefault, chatId: chatId });
-
-            if (!profile) {
-                return bot.sendMessage(chatId, `Você não tem um perfil de planta chamado "${plantNameToSetDefault}".`);
-            }
-
-            // Se encontrou, executa a "transação" de 2 passos:
-            // 1. Define TODOS os perfis DESTE USUÁRIO como não-padrão.
-            await PlantProfile.updateMany({ chatId: chatId }, { isDefault: false });
-
-            // 2. Define APENAS o perfil escolhido como padrão.
-            await PlantProfile.findByIdAndUpdate(profile._id, { isDefault: true });
-
-            bot.sendMessage(chatId, `✅ Perfil "${profile.name}" definido como padrão para a rega automática!`);
-
-        } catch (error) {
-            console.error("Erro no comando /setardefault:", error);
-            bot.sendMessage(chatId, "Ocorreu um erro ao definir o perfil padrão.");
-        }
+    if (!plantNameToSetDefault) {
+        return bot.sendMessage(chatId, "Formato inválido. Use: /plantapadrao <Nome da Planta>");
     }
+
+    try {
+        // Primeiro, verifica se o perfil que o usuário quer definir como padrão realmente existe e pertence a ele.
+        const profile = await PlantProfile.findOne({ name: plantNameToSetDefault, chatId: chatId });
+
+        if (!profile) {
+            return bot.sendMessage(chatId, `Você não tem um perfil de planta chamado "${plantNameToSetDefault}".`);
+        }
+
+        // Se encontrou, executa a "transação" de 2 passos:
+        // 1. Define TODOS os perfis DESTE USUÁRIO como não-padrão.
+        await PlantProfile.updateMany({ chatId: chatId }, { isDefault: false });
+
+        // 2. Define APENAS o perfil escolhido como padrão.
+        await PlantProfile.findByIdAndUpdate(profile._id, { isDefault: true });
+
+        bot.sendMessage(chatId, `✅ Perfil "${profile.name}" definido como padrão para a rega automática!`);
+
+    } catch (error) {
+        console.error("Erro no comando /setardefault:", error);
+        bot.sendMessage(chatId, "Ocorreu um erro ao definir o perfil padrão.");
+    }
+} 
     else if (text === '/meuid') {
         bot.sendMessage(chatId, `Seu ID de Chat para login na web é:\n\n\`\`\`${chatId}\`\`\`\n\nCopie este número e cole-o na página de login.`);
     }
