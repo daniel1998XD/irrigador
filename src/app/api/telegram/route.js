@@ -24,7 +24,7 @@ async function handleCommand(message) {
 *Comandos Disponíveis:*
 \`/addperfil <Nome>;<UmidadeMin>;<TempoSeg>\` - Adiciona um novo perfil de planta.
 \`/listarperfis\` - Mostra todos os seus perfis.
-\`/setardefault <Nome da Planta>\` - Define qual perfil a rega automática deve seguir.
+\`/plantapadrao <Nome da Planta>\` - Define qual perfil a rega automática deve seguir.
 \`/historico <Nome da Planta>\` - Mostra as últimas 3 regas da planta.
 \`/umidade\` - Mostra a última umidade registrada pelo sensor.
 \`/meuid\` - Mostra seu ID para login na web.
@@ -48,7 +48,7 @@ async function handleCommand(message) {
         profiles.forEach(p => { response += `Nome: ${p.name}\nUmidade Mínima: ${p.minHumidity}%\nDuração da Rega: ${p.wateringDuration}s\n\n`; });
         bot.sendMessage(chatId, response);
     }
-    else if (text.startsWith('/historico ')) {
+    else if (text.startsWith('/historico')) {
         const plantNameToFind = text.substring(11).trim();
 
         if (!plantNameToFind) {
