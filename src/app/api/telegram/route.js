@@ -8,6 +8,12 @@ const token = process.env.TELEGRAM_BOT_TOKEN;
 const bot = new TelegramBot(token);
 
 // Função para processar os comandos
+function escapeMarkdown(text) {
+    // Esta lista contém os caracteres que o Telegram V2 Markdown considera especiais.
+    const specialChars = ['_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!'];
+    // A mágica acontece aqui: para cada caractere especial, substituímos por ele mesmo com uma barra antes.
+    return text.toString().replace(new RegExp(`[${specialChars.join('\\')}]`, 'g'), '\\$&');
+}
 async function handleCommand(message) {
     const text = message.text;
     const chatId = message.chat.id;
@@ -15,7 +21,7 @@ async function handleCommand(message) {
     if (text.startsWith('/start')) {
         bot.sendMessage(chatId, "Olá! Bem-vindo ao Bot de Irrigação.\n\nComandos:\n/addperfil <Nome>;<UmidadeMin>;<TempoSeg>\n/listarperfis\n/regar <TempoSeg>");
     }
-    else if (text.startsWith('/addperfil ')) {
+    else if (text.startsWith('/addperfil')) {
         const params = text.substring(11).split(';');
         if (params.length !== 3) {
             return bot.sendMessage(chatId, "Formato inválido. Use: /addperfil Nome;UmidadeMin;TempoSeg");
@@ -45,7 +51,6 @@ async function handleCommand(message) {
                 return bot.sendMessage(chatId, `Perfil de planta "${plantNameToFind}" não encontrado.`);
             }
 
-            // Busca no banco, ordena do mais novo para o mais velho, e pega no MÁXIMO 3.
             const history = await WateringCommand.find({ plantProfileId: profile._id })
                 .sort({ timestamp: -1 })
                 .limit(3);
@@ -54,18 +59,25 @@ async function handleCommand(message) {
                 return bot.sendMessage(chatId, `Nenhum histórico de rega para "${profile.name}".`);
             }
 
-            let responseMessage = `Últimas 3 regas para *${profile.name}*:\n\n`;
+            // ---- ALTERAÇÃO AQUI ----
+            // Usamos a função escapeMarkdown para garantir que o nome da planta não quebre a formatação.
+            const safePlantName = escapeMarkdown(profile.name);
+
+            let responseMessage = `Últimas 3 regas para *${safePlantName}*:\n\n`;
 
             for (const item of history) {
+                // A data formatada não costuma ter caracteres problemáticos, então não precisamos escapar.
                 const dataFormatada = new Date(item.timestamp).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
-                responseMessage += `- Regado por ${item.duration}s em: ${dataFormatada}\n`;
+                responseMessage += `\\- Regado por ${item.duration}s em: ${dataFormatada}\n`; // Adicionei '\\-' para garantir que a lista sempre funcione.
             }
 
-            bot.sendMessage(chatId, responseMessage, "Markdown");
+            // Enviando a mensagem com a opção de parse MarkdownV2
+            bot.sendMessage(chatId, responseMessage, { parse_mode: "MarkdownV2" });
 
         } catch (error) {
-            console.error("Erro no comando /historico:", error);
-            bot.sendMessage(chatId, "Ocorreu um erro ao buscar o histórico.");
+            // Para depurar, vamos logar o erro exato no console da Vercel
+            console.error("ERRO DETALHADO no comando /historico:", error);
+            bot.sendMessage(chatId, "Ocorreu um erro ao buscar o histórico. Verifique os logs do servidor.");
         }
     }
     else if (text === '/meuid') {

@@ -9,7 +9,6 @@ export default function PerfisPage() {
     const [userChatId, setUserChatId] = useState(null);
 
     useEffect(() => {
-        // Este código roda no navegador assim que a página carrega.
         const savedChatId = localStorage.getItem('userChatId');
 
         if (!savedChatId) {
