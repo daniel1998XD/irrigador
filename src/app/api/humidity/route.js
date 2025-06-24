@@ -18,11 +18,17 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Umidade não fornecida' }, { status: 400 });
     }
     
-    const profiles = await PlantProfile.find({});
-
-    // --- DEBUG LOG 2: VERIFICAR OS PERFIS ENCONTRADOS ---
-    console.log(`[DEBUG] Perfis encontrados no banco: ${profiles.length}`);
-    // Se o log acima mostrar "0", este é o seu problema!
+    // Encontra o documento com o identificador 'main_device' e atualiza os campos,
+    // ou cria o documento se for a primeira vez.
+    await DeviceStatus.findOneAndUpdate(
+      { identifier: 'main_device' },
+      { 
+        lastHumidity: humidity,
+        lastReportTimestamp: new Date()
+      },
+      { upsert: true } // Opção importante: se não encontrar, cria (UPdate + inSERT).
+    );
+    console.log(`[STATUS] Umidade ${humidity}% salva no banco.`);
 
     let commandGenerated = false;
     for (const profile of profiles) {
