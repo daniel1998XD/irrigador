@@ -19,7 +19,19 @@ async function handleCommand(message) {
     const chatId = message.chat.id;
 
     if (text.startsWith('/start')) {
-        bot.sendMessage(chatId, "Olá! Bem-vindo ao Bot de Irrigação.\n\nComandos:\n/addperfil <Nome>;<UmidadeMin>;<TempoSeg>\n/listarperfis\n/regar <TempoSeg>");
+        const welcomeMessage = `Olá! Bem-vindo ao Bot de Irrigação. 🌱
+
+*Comandos Disponíveis:*
+\`/addperfil <Nome>;<UmidadeMin>;<TempoSeg>\` - Adiciona um novo perfil de planta.
+\`/listarperfis\` - Mostra todos os seus perfis.
+\`/setardefault <Nome da Planta>\` - Define qual perfil a rega automática deve seguir.
+\`/historico <Nome da Planta>\` - Mostra as últimas 3 regas da planta.
+\`/umidade\` - Mostra a última umidade registrada pelo sensor.
+\`/meuid\` - Mostra seu ID para login na web.
+\`/regar <Nome da Planta>\` - Aciona uma rega manual para uma planta.`;
+
+        // Usamos MarkdownV2 para uma formatação mais robusta
+        bot.sendMessage(chatId, welcomeMessage, { parse_mode: "MarkdownV2" });
     }
     else if (text.startsWith('/addperfil')) {
         const params = text.substring(11).split(';');
@@ -78,6 +90,35 @@ async function handleCommand(message) {
             // Para depurar, vamos logar o erro exato no console da Vercel
             console.error("ERRO DETALHADO no comando /historico:", error);
             bot.sendMessage(chatId, "Ocorreu um erro ao buscar o histórico. Verifique os logs do servidor.");
+        }
+    }
+    else if (text.startsWith('/plantapadrao')) {
+        const plantNameToSetDefault = text.substring(14).trim();
+
+        if (!plantNameToSetDefault) {
+            return bot.sendMessage(chatId, "Formato inválido. Use: /plantapadrao <Nome da Planta>");
+        }
+
+        try {
+            // Primeiro, verifica se o perfil que o usuário quer definir como padrão realmente existe e pertence a ele.
+            const profile = await PlantProfile.findOne({ name: plantNameToSetDefault, chatId: chatId });
+
+            if (!profile) {
+                return bot.sendMessage(chatId, `Você não tem um perfil de planta chamado "${plantNameToSetDefault}".`);
+            }
+
+            // Se encontrou, executa a "transação" de 2 passos:
+            // 1. Define TODOS os perfis DESTE USUÁRIO como não-padrão.
+            await PlantProfile.updateMany({ chatId: chatId }, { isDefault: false });
+
+            // 2. Define APENAS o perfil escolhido como padrão.
+            await PlantProfile.findByIdAndUpdate(profile._id, { isDefault: true });
+
+            bot.sendMessage(chatId, `✅ Perfil "${profile.name}" definido como padrão para a rega automática!`);
+
+        } catch (error) {
+            console.error("Erro no comando /setardefault:", error);
+            bot.sendMessage(chatId, "Ocorreu um erro ao definir o perfil padrão.");
         }
     }
     else if (text === '/meuid') {
