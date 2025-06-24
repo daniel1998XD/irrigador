@@ -31,8 +31,45 @@ async function handleCommand(message) {
         profiles.forEach(p => { response += `Nome: ${p.name}\nUmidade Mínima: ${p.minHumidity}%\nDuração da Rega: ${p.wateringDuration}s\n\n`; });
         bot.sendMessage(chatId, response);
     }
-    else if (text === '/meuid') { 
-    bot.sendMessage(chatId, `Seu ID de Chat para login na web é:\n\n\`\`\`${chatId}\`\`\`\n\nCopie este número e cole-o na página de login.`);
+    else if (text.startsWith('/historico ')) {
+        const plantNameToFind = text.substring(11).trim();
+
+        if (!plantNameToFind) {
+            return bot.sendMessage(chatId, "Formato inválido. Use: /historico <Nome da Planta>");
+        }
+
+        try {
+            const profile = await PlantProfile.findOne({ name: plantNameToFind, chatId: chatId });
+
+            if (!profile) {
+                return bot.sendMessage(chatId, `Perfil de planta "${plantNameToFind}" não encontrado.`);
+            }
+
+            // Busca no banco, ordena do mais novo para o mais velho, e pega no MÁXIMO 3.
+            const history = await WateringCommand.find({ plantProfileId: profile._id })
+                .sort({ timestamp: -1 })
+                .limit(3);
+
+            if (history.length === 0) {
+                return bot.sendMessage(chatId, `Nenhum histórico de rega para "${profile.name}".`);
+            }
+
+            let responseMessage = `Últimas 3 regas para *${profile.name}*:\n\n`;
+
+            for (const item of history) {
+                const dataFormatada = new Date(item.timestamp).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+                responseMessage += `- Regado por ${item.duration}s em: ${dataFormatada}\n`;
+            }
+
+            bot.sendMessage(chatId, responseMessage, "Markdown");
+
+        } catch (error) {
+            console.error("Erro no comando /historico:", error);
+            bot.sendMessage(chatId, "Ocorreu um erro ao buscar o histórico.");
+        }
+    }
+    else if (text === '/meuid') {
+        bot.sendMessage(chatId, `Seu ID de Chat para login na web é:\n\n\`\`\`${chatId}\`\`\`\n\nCopie este número e cole-o na página de login.`);
     }
     else if (text.startsWith('/regar ')) {
         const plantNameToWater = text.substring(7).trim(); // Pega o nome da planta do comando
