@@ -30,7 +30,7 @@ async function handleCommand(message) {
 \`/meuid\` - Mostra seu ID para login na web.
 \`/regar <Nome da Planta>\` - Aciona uma rega manual para uma planta.`;
 
-        bot.sendMessage(chatId, welcomeMessage);
+        bot.sendMessage(chatId, welcomeMessage, { parse_mode: "MarkdownV2" });
     }
     else if (text.startsWith('/addperfil')) {
         const params = text.substring(11).split(';');
