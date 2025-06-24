@@ -173,15 +173,28 @@ async function handleCommand(message) {
 }
 
 export async function POST(request) {
-    await dbConnect();
-    try {
-        const body = await request.json();
-        if (body.message) {
-            await handleCommand(body.message);
-        }
-        return NextResponse.json({ status: 'ok' }, { status: 200 });
-    } catch (error) {
-        console.error("Erro no webhook do Telegram:", error);
-        return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
+  await dbConnect();
+  try {
+    const body = await request.json();
+    if (body.message) {
+      await handleCommand(body.message);
     }
+    return NextResponse.json({ status: 'ok' }, { status: 200 });
+  } catch (error) {
+    // ---- BLOCO DE DEBUG APRIMORADO ----
+    console.error("--- ERRO GERAL NO WEBHOOK DO TELEGRAM ---");
+    console.error("Mensagem de Erro:", error.message);
+    console.error("Código do Erro:", error.code); // Ex: EFATAL
+    console.error("Stack Trace Detalhado:", error.stack);
+    
+    // Tenta logar o corpo da requisição que causou o erro, se possível.
+    try {
+        const bodyForErrorLog = await request.json();
+        console.error("Corpo da Requisição que Causou o Erro:", JSON.stringify(bodyForErrorLog, null, 2));
+    } catch (bodyError) {
+        console.error("Não foi possível parsear o corpo da requisição no log de erro.");
+    }
+    
+    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
+  }
 }
