@@ -47,7 +47,7 @@ async function handleCallbackQuery(callbackQuery) {
             { action: nextAction, data: { profileId } },
             { upsert: true, new: true }
         );
-        bot.sendMessage(chatId, question, { parse_mode: 'MarkdownV2' });
+        bot.sendMessage(chatId, question);
     }
     // Responde ao callback para o ícone de "carregando" sumir no Telegram
     bot.answerCallbackQuery(callbackQuery.id);
@@ -90,7 +90,7 @@ async function handleTextMessage(message) {
             if (!updatedProfile) throw new Error("Falha ao encontrar ou atualizar o perfil.");
 
             await UserState.deleteOne({ chatId }); // Limpa o estado
-            return bot.sendMessage(chatId, `✅ ${successMessage}`, { parse_mode: 'MarkdownV2' });
+            return bot.sendMessage(chatId, `✅ ${successMessage}`);
 
         } catch (error) {
             await UserState.deleteOne({ chatId });
@@ -105,10 +105,10 @@ async function handleTextMessage(message) {
         // --- COMANDO /modificarperfil (NOVA LÓGICA) ---
        if (text.startsWith('/modificarperfil ')) {
             const plantName = text.substring(17).trim();
-            if (!plantName) return bot.sendMessage(chatId, "Formato inválido. Use: /modificarperfil <Nome da Planta>", { parse_mode: 'MarkdownV2' });
+            if (!plantName) return bot.sendMessage(chatId, "Formato inválido. Use: /modificarperfil <Nome da Planta>");
 
             const profile = await PlantProfile.findOne({ name: plantName, chatId: chatId });
-            if (!profile) return bot.sendMessage(chatId, `Você não tem um perfil chamado "${escapeMarkdown(plantName)}".`, { parse_mode: 'MarkdownV2' });
+            if (!profile) return bot.sendMessage(chatId, `Você não tem um perfil chamado "${escapeMarkdown(plantName)}".`);
 
             const keyboard = {
                 inline_keyboard: [
@@ -120,7 +120,6 @@ async function handleTextMessage(message) {
 
             bot.sendMessage(chatId, `O que você deseja modificar no perfil *${escapeMarkdown(profile.name)}*?`, {
                 reply_markup: keyboard,
-                parse_mode: 'MarkdownV2'
             });
         }
 
@@ -141,7 +140,7 @@ async function handleTextMessage(message) {
         }
         else if (text.startsWith('/removerperfil ')) {
             const plantName = text.substring(15).trim();
-            if (!plantName) return bot.sendMessage(chatId, "Formato inválido. Use: /removerperfil <Nome da Planta>", { parse_mode: 'MarkdownV2' });
+            if (!plantName) return bot.sendMessage(chatId, "Formato inválido. Use: /removerperfil <Nome da Planta>");
 
             const safePlantName = escapeMarkdown(plantName);
 
@@ -149,9 +148,9 @@ async function handleTextMessage(message) {
             const deletedProfile = await PlantProfile.findOneAndDelete({ name: plantName, chatId: chatId });
 
             if (deletedProfile) {
-                bot.sendMessage(chatId, `✅ Perfil *${safePlantName}* removido com sucesso!`, { parse_mode: 'MarkdownV2' });
+                bot.sendMessage(chatId, `✅ Perfil *${safePlantName}* removido com sucesso!`);
             } else {
-                bot.sendMessage(chatId, `❌ Perfil "${safePlantName}" não encontrado.`, { parse_mode: 'MarkdownV2' });
+                bot.sendMessage(chatId, `❌ Perfil "${safePlantName}" não encontrado.`);
             }
         }
         // --- COMANDO /addperfil ---
