@@ -20,7 +20,7 @@ export default function GeneralHistoryPage() {
       setError(''); // Limpa erros anteriores
       try {
         // CORREÇÃO: Usando a URL correta da API
-        const response = await fetch(`/api/historico-umidade-geral?chatId=${savedChatId}`);
+        const response = await fetch(`/api/history/humidity?chatId=${savedChatId}`);
         
         if (!response.ok) {
           // Se a resposta não for OK (ex: 404, 500), joga um erro
