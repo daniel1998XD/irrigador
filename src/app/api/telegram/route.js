@@ -42,15 +42,32 @@ async function handleCommand(message) {
 
     else if (text.startsWith('/listarperfis')) {
         const profiles = await PlantProfile.find({ chatId });
-        if (profiles.length === 0) return bot.sendMessage(chatId, "Nenhum perfil cadastrado.");
-        let response = "Perfis cadastrados:\n\n";
-        profiles.forEach(p => { response += `Nome: ${p.name}\nUmidade Mínima: ${p.minHumidity}%\nDuração da Rega: ${p.wateringDuration}s\n\n`; });
-        bot.sendMessage(chatId, response);
+
+        if (profiles.length === 0) {
+            return bot.sendMessage(chatId, "Nenhum perfil cadastrado.");
+        }
+
+        let responseMessage = "Perfis cadastrados:\n\n";
+
+        // Usamos um laço for...of para percorrer os perfis
+        for (const p of profiles) {
+            const safePlantName = escapeMarkdown(p.name);
+
+            // --- A MÁGICA ACONTECE AQUI ---
+            // Usamos um operador ternário: se p.isDefault for verdadeiro, 
+            // a variável 'indicator' recebe o texto, senão, recebe um texto vazio.
+            const indicator = p.isDefault ? ' *(Padrão)* ⭐' : '';
+
+            responseMessage += `*${safePlantName}${indicator}*\n`; // Adiciona o indicador ao lado do nome
+            responseMessage += `Umidade Mín: ${escapeMarkdown(p.minHumidity.toString())}%\n`;
+            responseMessage += `Duração da Rega: ${escapeMarkdown(p.wateringDuration.toString())}s\n\n`;
+        }
+
+        bot.sendMessage(chatId, responseMessage);
+
     }
     else if (text.startsWith('/historico')) {
         const plantNameToFind = text.substring(11).trim();
-        async function handleCommand(message) {
-        }
     }
     else if (text.startsWith('/plantapadrao')) {
         const plantNameToSetDefault = text.substring(14).trim();
@@ -79,7 +96,6 @@ async function handleCommand(message) {
         } catch (error) {
             console.error("Erro no comando /setardefault:", error);
             bot.sendMessage(chatId, "Ocorreu um erro ao definir o perfil padrão.");
-
         }
     }
 
