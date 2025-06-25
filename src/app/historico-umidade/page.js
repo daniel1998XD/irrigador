@@ -17,13 +17,11 @@ export default function GeneralHistoryPage() {
 
     const fetchHistory = async () => {
       setIsLoading(true);
-      setError(''); // Limpa erros anteriores
+      setError('');
       try {
-        // CORREÇÃO: Usando a URL correta da API
         const response = await fetch(`/api/history/humidity?chatId=${savedChatId}`);
         
         if (!response.ok) {
-          // Se a resposta não for OK (ex: 404, 500), joga um erro
           const errData = await response.json().catch(() => ({ error: 'Falha ao processar a resposta do servidor' }));
           throw new Error(errData.error || `Erro ${response.status}: ${response.statusText}`);
         }
@@ -40,7 +38,7 @@ export default function GeneralHistoryPage() {
     };
 
     fetchHistory();
-  }, []); // O array vazio garante que o useEffect rode apenas uma vez
+  }, []);
 
   const formatarData = (timestamp) => {
     return new Date(timestamp).toLocaleString('pt-BR', {
@@ -75,7 +73,9 @@ export default function GeneralHistoryPage() {
               {history.map(item => (
                 <tr key={item._id} style={{ borderBottom: '1px solid #eee' }}>
                   <td style={{ padding: '12px' }}>
-                    <strong>{item.plantProfileId ? item.plantProfileId.name : 'Perfil Removido'}</strong>
+                    {/* ----- MUDANÇA AQUI ----- */}
+                    {/* Lendo o campo 'plantName' que a API envia */}
+                    <strong>{item.plantName}</strong>
                   </td>
                   <td style={{ padding: '12px' }}>{item.humidity}%</td>
                   <td style={{ padding: '12px', color: '#555' }}>{formatarData(item.timestamp)}</td>
