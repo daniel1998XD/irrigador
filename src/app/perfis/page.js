@@ -201,7 +201,7 @@ export default function PerfisPage() {
 
                 {userChatId && <AddProfileForm userChatId={userChatId} onProfileAdded={handleProfileAdded} />}
 
-                {notification && <p style={{ textAlign: 'center', padding: '10px', backgroundColor: '#f0f0f0', borderRadius: '5px' }}>{notification}</p>}
+                {notification && <p style={{ textAlign: 'center', padding: '10px', backgroundColor: '#333', borderRadius: '5px' }}>{notification}</p>}
 
                 <div style={{ marginTop: '20px' }}>
                     {profiles.length > 0 ? (
@@ -225,7 +225,7 @@ export default function PerfisPage() {
                                         <form action={setDefaultProfile}>
                                             <input type="hidden" name="profileId" value={profile._id} />
                                             <input type="hidden" name="chatId" value={userChatId} />
-                                            <button type="submit" style={{ padding: '8px 12px', cursor: 'pointer', background: '#f0f0f0', border: '1px solid #ccc', borderRadius: '5px' }}>Tornar Padrão</button>
+                                            <button type="submit" style={{ padding: '8px 12px', cursor: 'pointer', background: '#28a745', border: '1px solid #ccc', borderRadius: '5px' }}>Tornar Padrão</button>
                                         </form>
                                     )}
                                     <Link href={`/perfis/editar/${profile._id}`} style={{ padding: '8px 12px', cursor: 'pointer', background: '#ffc107', color: 'black', textDecoration: 'none', border: 'none', borderRadius: '5px' }}>
@@ -246,8 +246,8 @@ export default function PerfisPage() {
             {isModalOpen && (
                 <div style={styles.modalOverlay}>
                     <div style={styles.modalContent}>
-                        <h2 style={{ marginTop: 0 }}>Confirmar Exclusão</h2>
-                        <p>
+                        <h2 style={{ marginTop: 0, color: '#666' }}>Confirmar Exclusão</h2>
+                        <p style={{ color: '#666' }}>
                             Você tem certeza que deseja remover o perfil &ldquo;<strong>{profileToDelete?.name}</strong>&rdquo;?
                         </p>
                         <p style={{ fontSize: '0.9em', color: '#666' }}>
@@ -298,7 +298,7 @@ const styles = {
     buttonSecondary: {
         padding: '10px 18px',
         border: '1px solid #ccc',
-        backgroundColor: '#f0f0f0',
+        backgroundColor: '#28a745',
         borderRadius: '5px',
         cursor: 'pointer',
     },
