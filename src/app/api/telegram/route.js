@@ -127,8 +127,10 @@ async function handleTextMessage(message) {
         if (text === '/start') {
             const welcomeMessage = `Olá\\! Bem\\-vindo ao Bot de Irrigação\\. 🌱
 
-*Comandos Disponíveis:*
+Comandos Disponíveis:
 \`/addperfil <Nome>;<UmidadeMin>;<TempoSeg>\` \\- Adiciona um novo perfil\\.
+\`/modificarperfil <Nome>;<UmidadeMin>;<TempoSeg>\` \\- Adiciona um novo perfil\\.
+\`/deletarperfil <Nome>;<UmidadeMin>;<TempoSeg>\` \\- Adiciona um novo perfil\\.
 \`/listarperfis\` \\- Mostra todos os seus perfis\\.
 \`/plantapadrao <Nome da Planta>\` \\- Define qual perfil a rega automática deve seguir\\.
 \`/historico <Nome da Planta>\` \\- Mostra as últimas 3 regas da planta\\.
