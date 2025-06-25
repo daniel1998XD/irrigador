@@ -2,143 +2,147 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import PlantProfile from '@/models/plantProfile';
 import WateringCommand from '@/models/wateringCommand';
+import DeviceStatus from '@/models/deviceStatus';
 import TelegramBot from 'node-telegram-bot-api';
 
 const token = process.env.TELEGRAM_BOT_TOKEN;
 const bot = new TelegramBot(token);
 
-// Função para processar os comandos
+// Função de ajuda para evitar que caracteres especiais quebrem a formatação do Telegram.
 function escapeMarkdown(text) {
-    const specialChars = ['_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!']; // <--- ADICIONAMOS O '!' AQUI
-    return text.toString().replace(new RegExp(`[${specialChars.join('\\')}]`, 'g'), '\\$&');
+  if (!text) return '';
+  const specialChars = ['_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!'];
+  return text.toString().replace(new RegExp(`[${specialChars.join('\\')}]`, 'g'), '\\$&');
 }
+
+// Função principal que processa todos os comandos recebidos.
 async function handleCommand(message) {
-    const text = message.text;
+    const text = message.text || '';
     const chatId = message.chat.id;
 
-    if (text.startsWith('/start')) {
-        const welcomeMessage = `Olá\\! Bem-vindo ao Bot de Irrigação. 🌱
+    // --- COMANDO /start ---
+    if (text === '/start') {
+        const welcomeMessage = `Olá\\! Bem\\-vindo ao Bot de Irrigação\\. 🌱
 
 *Comandos Disponíveis:*
-\`/addperfil <Nome>;<UmidadeMin>;<TempoSeg>\` - Adiciona um novo perfil de planta.
-\`/listarperfis\` - Mostra todos os seus perfis.
-\`/plantapadrao <Nome da Planta>\` - Define qual perfil a rega automática deve seguir.
-\`/historico <Nome da Planta>\` - Mostra as últimas 3 regas da planta.
-\`/umidade\` - Mostra a última umidade registrada pelo sensor.
-\`/meuid\` - Mostra seu ID para login na web.
-\`/regar <Nome da Planta>\` - Aciona uma rega manual para uma planta.`;
+\`/addperfil <Nome>;<UmidadeMin>;<TempoSeg>\` \\- Adiciona um novo perfil\\.
+\`/listarperfis\` \\- Mostra todos os seus perfis\\.
+\`/setardefault <Nome da Planta>\` \\- Define qual perfil a rega automática deve seguir\\.
+\`/historico <Nome da Planta>\` \\- Mostra as últimas 3 regas da planta\\.
+\`/umidade\` \\- Mostra a última umidade registrada\\.
+\`/meuid\` \\- Mostra seu ID para login na web\\.
+\`/regar <Nome da Planta>\` \\- Aciona uma rega manual\\.`;
 
-        bot.sendMessage(chatId, welcomeMessage);
+        bot.sendMessage(chatId, welcomeMessage, { parse_mode: "MarkdownV2" });
     }
-    else if (text.startsWith('/addperfil')) {
+    // --- COMANDO /addperfil ---
+    else if (text.startsWith('/addperfil ')) {
         const params = text.substring(11).split(';');
         if (params.length !== 3) {
-            return bot.sendMessage(chatId, "Formato inválido. Use: /addperfil Nome;UmidadeMin;TempoSeg");
+            return bot.sendMessage(chatId, "Formato inválido\\. Use: /addperfil Nome;UmidadeMin;TempoSeg", { parse_mode: "MarkdownV2" });
         }
         const [name, minHumidity, wateringDuration] = params;
         await PlantProfile.create({ name, minHumidity: parseInt(minHumidity), wateringDuration: parseInt(wateringDuration), chatId });
-        bot.sendMessage(chatId, `Perfil "${safeName}" adicionado com sucesso\\!`);
+        
+        // CORREÇÃO: Usamos a variável 'name' que acabamos de criar, e a escapamos.
+        const safeName = escapeMarkdown(name);
+        bot.sendMessage(chatId, `Perfil *${safeName}* adicionado com sucesso\\!`, { parse_mode: "MarkdownV2" });
     }
-
-    else if (text.startsWith('/listarperfis')) {
+    // --- COMANDO /listarperfis ---
+    else if (text === '/listarperfis') {
         const profiles = await PlantProfile.find({ chatId });
-        if (profiles.length === 0) return bot.sendMessage(chatId, "Nenhum perfil cadastrado.");
-        let response = "Perfis cadastrados:\n\n";
-        profiles.forEach(p => { response += `Nome: ${p.name}\nUmidade Mínima: ${p.minHumidity}%\nDuração da Rega: ${p.wateringDuration}s\n\n`; });
-        bot.sendMessage(chatId, response);
-    }
-    else if (text.startsWith('/historico')) {
-        const plantNameToFind = text.substring(11).trim();
-        async function handleCommand(message) {
+        if (profiles.length === 0) return bot.sendMessage(chatId, "Nenhum perfil cadastrado\\.");
+        
+        let responseMessage = "Perfis cadastrados:\n\n";
+        for (const p of profiles) {
+            const safePlantName = escapeMarkdown(p.name);
+            const indicator = p.isDefault ? ' *(Padrão)* ⭐' : '';
+            responseMessage += `*${safePlantName}${indicator}*\n`;
+            responseMessage += `Umidade Mín: ${escapeMarkdown(p.minHumidity.toString())}%\n`;
+            responseMessage += `Duração da Rega: ${escapeMarkdown(p.wateringDuration.toString())}s\n\n`;
         }
+        bot.sendMessage(chatId, responseMessage, { parse_mode: "MarkdownV2" });
     }
-    else if (text.startsWith('/plantapadrao')) {
-        const plantNameToSetDefault = text.substring(14).trim();
+    // --- COMANDO /setardefault ---
+    else if (text.startsWith('/setardefault ')) {
+        const plantName = text.substring(14).trim();
+        if (!plantName) return bot.sendMessage(chatId, "Formato inválido\\. Use: /setardefault <Nome da Planta>", { parse_mode: "MarkdownV2" });
+        
+        const profile = await PlantProfile.findOne({ name: plantName, chatId: chatId });
+        if (!profile) return bot.sendMessage(chatId, `Você não tem um perfil chamado "${escapeMarkdown(plantName)}"\\.`);
 
-        if (!plantNameToSetDefault) {
-            return bot.sendMessage(chatId, "Formato inválido. Use: /plantapadrao <Nome da Planta>");
-        }
+        await PlantProfile.updateMany({ chatId: chatId }, { isDefault: false });
+        await PlantProfile.findByIdAndUpdate(profile._id, { isDefault: true });
 
-        try {
-            // Primeiro, verifica se o perfil que o usuário quer definir como padrão realmente existe e pertence a ele.
-            const profile = await PlantProfile.findOne({ name: plantNameToSetDefault, chatId: chatId });
-
-            if (!profile) {
-                return bot.sendMessage(chatId, `Você não tem um perfil de planta chamado "${plantNameToSetDefault}".`);
-            }
-
-            // Se encontrou, executa a "transação" de 2 passos:
-            // 1. Define TODOS os perfis DESTE USUÁRIO como não-padrão.
-            await PlantProfile.updateMany({ chatId: chatId }, { isDefault: false });
-
-            // 2. Define APENAS o perfil escolhido como padrão.
-            await PlantProfile.findByIdAndUpdate(profile._id, { isDefault: true });
-
-            bot.sendMessage(chatId, `✅ Perfil "${profile.name}" definido como padrão para a rega automática!`);
-
-        } catch (error) {
-            console.error("Erro no comando /setardefault:", error);
-            bot.sendMessage(chatId, "Ocorreu um erro ao definir o perfil padrão.");
-
-        }
+        bot.sendMessage(chatId, `✅ Perfil *${escapeMarkdown(profile.name)}* definido como padrão\\!`, { parse_mode: "MarkdownV2" });
     }
+    // --- COMANDO /umidade ---
+    else if (text === '/umidade') {
+        const status = await DeviceStatus.findOne({ identifier: 'main_device' });
+        if (!status || status.lastHumidity === null) return bot.sendMessage(chatId, "Ainda não recebi nenhuma leitura de umidade\\.");
 
+        const dataLeitura = escapeMarkdown(new Date(status.lastReportTimestamp).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }));
+        const responseMsg = `💧 A última umidade registrada foi de *${status.lastHumidity}%*\\.\n\n_(Leitura recebida em ${dataLeitura})_`;
+        bot.sendMessage(chatId, responseMsg, { parse_mode: "MarkdownV2" });
+    }
+    // --- COMANDO /historico ---
+    else if (text.startsWith('/historico ')) {
+        const plantName = text.substring(11).trim();
+        if (!plantName) return bot.sendMessage(chatId, "Formato inválido\\. Use: /historico <Nome da Planta>", { parse_mode: "MarkdownV2" });
+
+        const profile = await PlantProfile.findOne({ name: plantName, chatId: chatId });
+        if (!profile) return bot.sendMessage(chatId, `Perfil de planta "${escapeMarkdown(plantName)}" não encontrado\\.`);
+        
+        const history = await WateringCommand.find({ plantProfileId: profile._id }).sort({ timestamp: -1 }).limit(3);
+        if (history.length === 0) return bot.sendMessage(chatId, `Nenhum histórico de rega para "${escapeMarkdown(profile.name)}"\\.`);
+
+        let responseMessage = `Últimas 3 regas para *${escapeMarkdown(profile.name)}*:\n\n`;
+        for (const item of history) {
+            const dataFormatada = escapeMarkdown(new Date(item.timestamp).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }));
+            responseMessage += `\\- Regado por ${item.duration}s em: ${dataFormatada}\n`;
+        }
+        bot.sendMessage(chatId, responseMessage, { parse_mode: "MarkdownV2" });
+    }
+    // --- COMANDO /meuid ---
     else if (text === '/meuid') {
-        bot.sendMessage(chatId, `Seu ID de Chat para login na web é:\n\n\`\`\`${chatId}\`\`\`\n\nCopie este número e cole-o na página de login.`);
+        bot.sendMessage(chatId, `Seu ID de Chat para login na web é:\n\n\`\`\`${chatId}\`\`\`\n\nCopie este número e cole\\-o na página de login\\.`);
     }
-    else if (text.startsWith('/regar')) {
-        const plantNameToWater = text.substring(7).trim(); // Pega o nome da planta do comando
+    // --- COMANDO /regar ---
+    else if (text.startsWith('/regar ')) {
+        const plantName = text.substring(7).trim();
+        if (!plantName) return bot.sendMessage(chatId, "Formato inválido\\. Use: /regar <Nome da Planta>", { parse_mode: "MarkdownV2" });
 
-        if (!plantNameToWater) {
-            return bot.sendMessage(chatId, "Formato inválido. Use: /regar <Nome da Planta>");
-        }
-
-        try {
-            // Procura pelo perfil da planta que pertence a este usuário
-            const profile = await PlantProfile.findOne({ name: plantNameToWater, chatId: chatId });
-
-            if (!profile) {
-                return bot.sendMessage(chatId, `Perfil de planta "${plantNameToWater}" não encontrado.`);
-            }
-
-            // Se encontrou, cria um comando de rega VINCULADO a este perfil
-            await WateringCommand.create({
-                duration: profile.wateringDuration, // Usa a duração salva no perfil
-                plantProfileId: profile._id // Salva a referência ao perfil
-            });
-
-            bot.sendMessage(chatId, `Comando de rega manual para "${profile.name}" enviado\\!`);
-
-        } catch (error) {
-            console.error("Erro no comando /regar:", error);
-            bot.sendMessage(chatId, "Ocorreu um erro ao processar seu comando.");
-        }
+        const profile = await PlantProfile.findOne({ name: plantName, chatId: chatId });
+        if (!profile) return bot.sendMessage(chatId, `Perfil de planta "${escapeMarkdown(plantName)}" não encontrado\\.`);
+        
+        await WateringCommand.create({
+            duration: profile.wateringDuration,
+            plantProfileId: profile._id
+        });
+        bot.sendMessage(chatId, `Comando de rega manual para "*${escapeMarkdown(profile.name)}*" enviado\\!`, { parse_mode: "MarkdownV2" });
     }
 }
+
 
 export async function POST(request) {
     await dbConnect();
     try {
         const body = await request.json();
         if (body.message) {
-            await handleCommand(body.message);
+            // Envolvemos a chamada em um try...catch para que um erro em um comando não quebre o webhook.
+            try {
+                await handleCommand(body.message);
+            } catch (commandError) {
+                console.error("--- ERRO AO PROCESSAR COMANDO DO TELEGRAM ---", commandError);
+                // Envia uma mensagem de erro genérica para o usuário, se possível.
+                if (body.message.chat && body.message.chat.id) {
+                    bot.sendMessage(body.message.chat.id, "Ops\\! Ocorreu um erro ao processar seu comando\\. Tente novamente\\.", { parse_mode: "MarkdownV2" });
+                }
+            }
         }
         return NextResponse.json({ status: 'ok' }, { status: 200 });
     } catch (error) {
-        // ---- BLOCO DE DEBUG APRIMORADO ----
-        console.error("--- ERRO GERAL NO WEBHOOK DO TELEGRAM ---");
-        console.error("Mensagem de Erro:", error.message);
-        console.error("Código do Erro:", error.code); // Ex: EFATAL
-        console.error("Stack Trace Detalhado:", error.stack);
-
-        // Tenta logar o corpo da requisição que causou o erro, se possível.
-        try {
-            const bodyForErrorLog = await request.json();
-            console.error("Corpo da Requisição que Causou o Erro:", JSON.stringify(bodyForErrorLog, null, 2));
-        } catch (bodyError) {
-            console.error("Não foi possível parsear o corpo da requisição no log de erro.");
-        }
-
+        console.error("--- ERRO GERAL NO WEBHOOK DO TELEGRAM ---", error);
         return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
     }
 }
