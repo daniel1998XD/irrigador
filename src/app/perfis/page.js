@@ -78,7 +78,7 @@ export default function PerfisPage() {
         </div>
         <p>A rega automática e o histórico de umidade seguirão o perfil marcado como <strong>(Padrão)</strong>.</p>
         <div style={{ margin: '20px 0' }}>
-          <Link href="/historico-geral" style={{ color: '#0070f3', textDecoration: 'none', fontWeight: 'bold' }}>
+          <Link href="/historico-umidade" style={{ color: '#0070f3', textDecoration: 'none', fontWeight: 'bold' }}>
               Ver Histórico Geral de Umidade &rarr;
           </Link>
         </div>
