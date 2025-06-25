@@ -103,7 +103,7 @@ async function handleTextMessage(message) {
         //... (código dos comandos /start, /addperfil, /listarperfis, etc.)
 
         // --- COMANDO /modificarperfil (NOVA LÓGICA) ---
-       if (text.startsWith('/modificarperfil ')) {
+        if (text.startsWith('/modificarperfil ')) {
             const plantName = text.substring(17).trim();
             if (!plantName) return bot.sendMessage(chatId, "Formato inválido. Use: /modificarperfil <Nome da Planta>");
 
@@ -222,13 +222,56 @@ Comandos Disponíveis:
                 bot.sendMessage(chatId, `Ocorreu um erro ao remover o perfil\. Tente novamente\.`);
             }
         }
-        // --- COMANDO /umidade ---
         else if (text === '/umidade') {
-            const status = await DeviceStatus.findOne({ identifier: 'main_device' });
-            if (!status || status.lastHumidity === null) return bot.sendMessage(chatId, "Ainda não recebi nenhuma leitura de umidade.");
+            // Busca o registro mais recente no histórico de umidade
+            // que pertença a um perfil deste usuário.
+            const latestReading = await HumidityLog.aggregate([
+                // 1. Faz a "junção" com a coleção de perfis de planta
+                {
+                    $lookup: {
+                        from: 'plantprofiles',
+                        localField: 'plantProfileId',
+                        foreignField: '_id',
+                        as: 'plantProfileInfo'
+                    }
+                },
+                // 2. "Desmonta" o resultado para poder filtrar
+                { $unwind: '$plantProfileInfo' },
+                // 3. Filtra para pegar apenas os perfis que pertencem ao usuário que mandou a mensagem
+                {
+                    $match: {
+                        'plantProfileInfo.chatId': chatId.toString()
+                    }
+                },
+                // 4. Ordena por data, do mais novo para o mais antigo
+                { $sort: { timestamp: -1 } },
+                // 5. Pega apenas o primeiro resultado (o mais recente)
+                { $limit: 1 },
+                // 6. Formata o resultado final
+                {
+                    $project: {
+                        _id: 0,
+                        humidity: 1,
+                        timestamp: 1,
+                        plantName: '$plantProfileInfo.name'
+                    }
+                }
+            ]);
 
-            const dataLeitura = escapeMarkdown(new Date(status.lastReportTimestamp).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }));
-            const responseMsg = `💧 A última umidade registrada foi de *${status.lastHumidity}%*\\.\n\n_(Leitura recebida em ${dataLeitura})_`;
+            // O resultado da agregação é sempre um array.
+            if (latestReading.length === 0) {
+                return bot.sendMessage(chatId, "Ainda não há nenhuma leitura de umidade registrada para os seus perfis.");
+            }
+
+            // Pega o primeiro (e único) item do array
+            const lastLog = latestReading[0];
+
+            const dataLeitura = escapeMarkdown(new Date(lastLog.timestamp).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }));
+            const safePlantName = escapeMarkdown(lastLog.plantName);
+
+            const responseMsg = `💧 A última umidade registrada para o perfil *${safePlantName}* foi de *${lastLog.humidity}%*\\.\n\n_(Leitura recebida em ${dataLeitura})_`;
+
+            // Envia a mensagem formatada para o usuário
             bot.sendMessage(chatId, responseMsg);
         }
         // --- COMANDO /historico ---
