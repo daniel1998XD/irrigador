@@ -5,6 +5,7 @@ import WateringCommand from '@/models/wateringCommand';
 import DeviceStatus from '@/models/deviceStatus';
 import UserState from '@/models/userState';
 import TelegramBot from 'node-telegram-bot-api';
+import HumidityLog from '@/models/humidityLog';
 
 const token = process.env.TELEGRAM_BOT_TOKEN;
 const bot = new TelegramBot(token);
