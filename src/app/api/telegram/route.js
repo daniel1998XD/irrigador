@@ -17,7 +17,7 @@ async function handleCommand(message) {
     const chatId = message.chat.id;
 
     if (text.startsWith('/start')) {
-        const welcomeMessage = `Olá//! Bem-vindo ao Bot de Irrigação. 🌱
+        const welcomeMessage = `Olá\\! Bem-vindo ao Bot de Irrigação. 🌱
 
 *Comandos Disponíveis:*
 \`/addperfil <Nome>;<UmidadeMin>;<TempoSeg>\` - Adiciona um novo perfil de planta.
@@ -130,7 +130,7 @@ async function handleCommand(message) {
             // 2. Define APENAS o perfil escolhido como padrão.
             await PlantProfile.findByIdAndUpdate(profile._id, { isDefault: true });
 
-            bot.sendMessage(chatId, `✅ Perfil "${profile.name}" definido como padrão para a rega automática//!`);
+            bot.sendMessage(chatId, `✅ Perfil "${profile.name}" definido como padrão para a rega automática\\!`);
 
         } catch (error) {
             console.error("Erro no comando /setardefault:", error);
@@ -161,7 +161,7 @@ async function handleCommand(message) {
                 plantProfileId: profile._id // Salva a referência ao perfil
             });
 
-            bot.sendMessage(chatId, `Comando de rega manual para "${profile.name}" enviado//!`);
+            bot.sendMessage(chatId, `Comando de rega manual para "${profile.name}" enviado\\!`);
 
         } catch (error) {
             console.error("Erro no comando /regar:", error);
