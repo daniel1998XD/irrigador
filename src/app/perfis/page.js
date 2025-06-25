@@ -78,7 +78,7 @@ export default function PerfisPage() {
         </div>
         <p>A rega automática e o histórico de umidade seguirão o perfil marcado como <strong>(Padrão)</strong>.</p>
         <div style={{ margin: '20px 0' }}>
-          <Link href="/historico-geral" style={{ color: '#0070f3', textDecoration: 'none', fontWeight: 'bold' }}>
+          <Link href="/historico-umidade" style={{ color: '#0070f3', textDecoration: 'none', fontWeight: 'bold' }}>
               Ver Histórico Geral de Umidade &rarr;
           </Link>
         </div>
@@ -105,7 +105,7 @@ export default function PerfisPage() {
                       <button type="submit" style={{padding: '8px 12px', cursor: 'pointer', background: '#f0f0f0', border: '1px solid #ccc', borderRadius: '5px'}}>Tornar Padrão</button>
                     </form>
                   )}
-                  <Link href={`/perfis/modificar/${profile._id}`} style={{ padding: '8px 12px', cursor: 'pointer', background: '#ffc107', color: 'black', textDecoration: 'none', border: 'none', borderRadius: '5px' }}>
+                  <Link href={`/perfis/editar/${profile._id}`} style={{ padding: '8px 12px', cursor: 'pointer', background: '#ffc107', color: 'black', textDecoration: 'none', border: 'none', borderRadius: '5px' }}>
                       Modificar
                   </Link>
                   <button onClick={() => openDeleteModal(profile)} style={{padding: '8px 12px', cursor: 'pointer', background: '#dc3545', color: 'white', border: 'none', borderRadius: '5px'}}>

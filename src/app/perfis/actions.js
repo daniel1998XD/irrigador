@@ -45,6 +45,6 @@ export async function updateProfile(formData) { // <--- CORREÇÃO: Adicionado "
     });
 
     revalidatePath('/perfis'); 
-    revalidatePath(`/perfis/modificar/${profileId}`);
+    revalidatePath(`/perfis/editar/${profileId}`);
     redirect('/perfis');
 }
