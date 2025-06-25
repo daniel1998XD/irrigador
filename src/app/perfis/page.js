@@ -11,7 +11,7 @@ export default function PerfisPage() {
 
   // --- ESTADOS PARA O MODAL DE DELEÇÃO ---
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [profileToDelete, setProfileToDelete] = useState(null); // Linha corrigida
+  const [profileToDelete, setProfileToDelete] = useState(null);
 
   useEffect(() => {
     const savedChatId = localStorage.getItem('userChatId');
@@ -60,12 +60,10 @@ export default function PerfisPage() {
     
     await deleteProfile(formData);
     
-    // Atualiza a lista de perfis na tela sem recarregar a página
     setProfiles(profiles.filter(p => p._id !== profileToDelete._id));
     
     closeDeleteModal();
   };
-
 
   if (isLoading) {
     return <p style={{ textAlign: 'center', marginTop: '100px' }}>Carregando...</p>;
@@ -110,7 +108,6 @@ export default function PerfisPage() {
                   <Link href={`/perfis/modificar/${profile._id}`} style={{ padding: '8px 12px', cursor: 'pointer', background: '#ffc107', color: 'black', textDecoration: 'none', border: 'none', borderRadius: '5px' }}>
                       Modificar
                   </Link>
-                  {/* O botão agora abre o modal em vez de submeter um formulário */}
                   <button onClick={() => openDeleteModal(profile)} style={{padding: '8px 12px', cursor: 'pointer', background: '#dc3545', color: 'white', border: 'none', borderRadius: '5px'}}>
                       Deletar
                   </button>
@@ -129,7 +126,7 @@ export default function PerfisPage() {
           <div style={styles.modalContent}>
             <h2 style={{ marginTop: 0 }}>Confirmar Exclusão</h2>
             <p>
-              Você tem certeza que deseja remover o perfil "<strong>{profileToDelete?.name}</strong>"?
+              Você tem certeza que deseja remover o perfil &ldquo;<strong>{profileToDelete?.name}</strong>&rdquo;?
             </p>
             <p style={{ fontSize: '0.9em', color: '#666' }}>
               Esta ação não pode ser desfeita.
