@@ -33,20 +33,20 @@ async function handleCommand(message) {
 \`/meuid\` \\- Mostra seu ID para login na web\\.
 \`/regar <Nome da Planta>\` \\- Aciona uma rega manual\\.`;
 
-        bot.sendMessage(chatId, welcomeMessage, { parse_mode: "MarkdownV2" });
+        bot.sendMessage(chatId, welcomeMessage);
     }
     // --- COMANDO /addperfil ---
     else if (text.startsWith('/addperfil ')) {
         const params = text.substring(11).split(';');
         if (params.length !== 3) {
-            return bot.sendMessage(chatId, "Formato inválido\\. Use: /addperfil Nome;UmidadeMin;TempoSeg", { parse_mode: "MarkdownV2" });
+            return bot.sendMessage(chatId, "Formato inválido\\. Use: /addperfil Nome;UmidadeMin;TempoSeg");
         }
         const [name, minHumidity, wateringDuration] = params;
         await PlantProfile.create({ name, minHumidity: parseInt(minHumidity), wateringDuration: parseInt(wateringDuration), chatId });
         
         // CORREÇÃO: Usamos a variável 'name' que acabamos de criar, e a escapamos.
         const safeName = escapeMarkdown(name);
-        bot.sendMessage(chatId, `Perfil *${safeName}* adicionado com sucesso\\!`, { parse_mode: "MarkdownV2" });
+        bot.sendMessage(chatId, `Perfil *${safeName}* adicionado com sucesso\\!`);
     }
     // --- COMANDO /listarperfis ---
     else if (text === '/listarperfis') {
@@ -61,12 +61,12 @@ async function handleCommand(message) {
             responseMessage += `Umidade Mín: ${escapeMarkdown(p.minHumidity.toString())}%\n`;
             responseMessage += `Duração da Rega: ${escapeMarkdown(p.wateringDuration.toString())}s\n\n`;
         }
-        bot.sendMessage(chatId, responseMessage, { parse_mode: "MarkdownV2" });
+        bot.sendMessage(chatId, responseMessage);
     }
     // --- COMANDO /setardefault ---
     else if (text.startsWith('/setardefault ')) {
         const plantName = text.substring(14).trim();
-        if (!plantName) return bot.sendMessage(chatId, "Formato inválido\\. Use: /setardefault <Nome da Planta>", { parse_mode: "MarkdownV2" });
+        if (!plantName) return bot.sendMessage(chatId, "Formato inválido\\. Use: /setardefault <Nome da Planta>");
         
         const profile = await PlantProfile.findOne({ name: plantName, chatId: chatId });
         if (!profile) return bot.sendMessage(chatId, `Você não tem um perfil chamado "${escapeMarkdown(plantName)}"\\.`);
@@ -74,21 +74,21 @@ async function handleCommand(message) {
         await PlantProfile.updateMany({ chatId: chatId }, { isDefault: false });
         await PlantProfile.findByIdAndUpdate(profile._id, { isDefault: true });
 
-        bot.sendMessage(chatId, `✅ Perfil *${escapeMarkdown(profile.name)}* definido como padrão\\!`, { parse_mode: "MarkdownV2" });
+        bot.sendMessage(chatId, `✅ Perfil *${escapeMarkdown(profile.name)}* definido como padrão\\!`);
     }
     // --- COMANDO /umidade ---
     else if (text === '/umidade') {
         const status = await DeviceStatus.findOne({ identifier: 'main_device' });
-        if (!status || status.lastHumidity === null) return bot.sendMessage(chatId, "Ainda não recebi nenhuma leitura de umidade\\.");
+        if (!status || status.lastHumidity === null) return bot.sendMessage(chatId, "Ainda não recebi nenhuma leitura de umidade.");
 
         const dataLeitura = escapeMarkdown(new Date(status.lastReportTimestamp).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }));
         const responseMsg = `💧 A última umidade registrada foi de *${status.lastHumidity}%*\\.\n\n_(Leitura recebida em ${dataLeitura})_`;
-        bot.sendMessage(chatId, responseMsg, { parse_mode: "MarkdownV2" });
+        bot.sendMessage(chatId, responseMsg);
     }
     // --- COMANDO /historico ---
     else if (text.startsWith('/historico ')) {
         const plantName = text.substring(11).trim();
-        if (!plantName) return bot.sendMessage(chatId, "Formato inválido\\. Use: /historico <Nome da Planta>", { parse_mode: "MarkdownV2" });
+        if (!plantName) return bot.sendMessage(chatId, "Formato inválido\\. Use: /historico <Nome da Planta>");
 
         const profile = await PlantProfile.findOne({ name: plantName, chatId: chatId });
         if (!profile) return bot.sendMessage(chatId, `Perfil de planta "${escapeMarkdown(plantName)}" não encontrado\\.`);
@@ -101,7 +101,7 @@ async function handleCommand(message) {
             const dataFormatada = escapeMarkdown(new Date(item.timestamp).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }));
             responseMessage += `\\- Regado por ${item.duration}s em: ${dataFormatada}\n`;
         }
-        bot.sendMessage(chatId, responseMessage, { parse_mode: "MarkdownV2" });
+        bot.sendMessage(chatId, responseMessage);
     }
     // --- COMANDO /meuid ---
     else if (text === '/meuid') {
@@ -110,7 +110,7 @@ async function handleCommand(message) {
     // --- COMANDO /regar ---
     else if (text.startsWith('/regar ')) {
         const plantName = text.substring(7).trim();
-        if (!plantName) return bot.sendMessage(chatId, "Formato inválido\\. Use: /regar <Nome da Planta>", { parse_mode: "MarkdownV2" });
+        if (!plantName) return bot.sendMessage(chatId, "Formato inválido\\. Use: /regar <Nome da Planta>");
 
         const profile = await PlantProfile.findOne({ name: plantName, chatId: chatId });
         if (!profile) return bot.sendMessage(chatId, `Perfil de planta "${escapeMarkdown(plantName)}" não encontrado\\.`);
@@ -119,7 +119,7 @@ async function handleCommand(message) {
             duration: profile.wateringDuration,
             plantProfileId: profile._id
         });
-        bot.sendMessage(chatId, `Comando de rega manual para "*${escapeMarkdown(profile.name)}*" enviado\\!`, { parse_mode: "MarkdownV2" });
+        bot.sendMessage(chatId, `Comando de rega manual para "*${escapeMarkdown(profile.name)}*" enviado\\!`);
     }
 }
 
@@ -136,7 +136,7 @@ export async function POST(request) {
                 console.error("--- ERRO AO PROCESSAR COMANDO DO TELEGRAM ---", commandError);
                 // Envia uma mensagem de erro genérica para o usuário, se possível.
                 if (body.message.chat && body.message.chat.id) {
-                    bot.sendMessage(body.message.chat.id, "Ops\\! Ocorreu um erro ao processar seu comando\\. Tente novamente\\.", { parse_mode: "MarkdownV2" });
+                    bot.sendMessage(body.message.chat.id, "Ops\\! Ocorreu um erro ao processar seu comando\\. Tente novamente\\.");
                 }
             }
         }
