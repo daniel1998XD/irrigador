@@ -17,7 +17,7 @@ async function handleCommand(message) {
     const chatId = message.chat.id;
 
     if (text.startsWith('/start')) {
-        const welcomeMessage = `Olá! Bem-vindo ao Bot de Irrigação. 🌱
+        const welcomeMessage = `Olá//! Bem-vindo ao Bot de Irrigação. 🌱
 
 *Comandos Disponíveis:*
 \`/addperfil <Nome>;<UmidadeMin>;<TempoSeg>\` - Adiciona um novo perfil de planta.
