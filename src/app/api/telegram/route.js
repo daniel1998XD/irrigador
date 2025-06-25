@@ -1,26 +1,20 @@
-
-
-// src/app/api/telegram/route.js
-
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import PlantProfile from '@/models/plantProfile';
 import WateringCommand from '@/models/wateringCommand';
 import DeviceStatus from '@/models/deviceStatus';
-import UserState from '@/models/userState'; // Importamos o novo model
+import UserState from '@/models/userState';
 import TelegramBot from 'node-telegram-bot-api';
 
 const token = process.env.TELEGRAM_BOT_TOKEN;
 const bot = new TelegramBot(token);
 
-// Função de escape (sem alterações)
 function escapeMarkdown(text) {
     if (!text) return '';
     const specialChars = ['_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!'];
     return text.toString().replace(new RegExp(`[${specialChars.join('\\')}]`, 'g'), '\\$&');
 }
 
-// --- NOVO MANIPULADOR DE CALLBACK QUERY ---
 async function handleCallbackQuery(callbackQuery) {
     const { data, message } = callbackQuery;
     const chatId = message.chat.id;
@@ -30,7 +24,7 @@ async function handleCallbackQuery(callbackQuery) {
 
     const profile = await PlantProfile.findById(profileId);
     if (!profile || profile.chatId !== chatId.toString()) {
-        return bot.sendMessage(chatId, "Ops, este perfil não foi encontrado ou não pertence a você.");
+        return bot.answerCallbackQuery(callbackQuery.id, { text: "Ops, perfil não encontrado." });
     }
 
     let question = '';
@@ -48,7 +42,6 @@ async function handleCallbackQuery(callbackQuery) {
     }
 
     if (question && nextAction) {
-        // Salva o estado do usuário no banco de dados
         await UserState.findOneAndUpdate(
             { chatId },
             { action: nextAction, data: { profileId } },
@@ -56,17 +49,16 @@ async function handleCallbackQuery(callbackQuery) {
         );
         bot.sendMessage(chatId, question, { parse_mode: 'MarkdownV2' });
     }
+    // Responde ao callback para o ícone de "carregando" sumir no Telegram
+    bot.answerCallbackQuery(callbackQuery.id);
 }
 
-// --- MANIPULADOR DE MENSAGENS DE TEXTO (handleCommand) ATUALIZADO ---
 async function handleTextMessage(message) {
     const text = message.text || '';
     const chatId = message.chat.id;
-
-    // 1. VERIFICAR SE HÁ UM ESTADO DE CONVERSA PENDENTE
     const userState = await UserState.findOne({ chatId });
 
-    if (userState) {
+    if (userState && userState.action.startsWith('awaiting_')) {
         const profileId = userState.data.profileId;
         let newValue = text.trim();
         let updateField = {};
@@ -81,52 +73,49 @@ async function handleTextMessage(message) {
                 if (isNaN(numValue)) throw new Error("Valor inválido. Por favor, envie apenas números.");
                 updateField = { minHumidity: numValue };
                 successMessage = `Umidade mínima alterada para *${escapeMarkdown(numValue.toString())}%*!`;
-            } else if (user_state.action === 'awaiting_watering_duration') {
+            } else if (userState.action === 'awaiting_watering_duration') { // CORREÇÃO: "userState" em vez de "user_state"
                 const numValue = parseInt(newValue, 10);
                 if (isNaN(numValue)) throw new Error("Valor inválido. Por favor, envie apenas números.");
                 updateField = { wateringDuration: numValue };
                 successMessage = `Duração da rega alterada para *${escapeMarkdown(numValue.toString())}s*!`;
             }
 
-            // Chama a API PUT para fazer a atualização segura
-            const apiResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/profiles/${profileId}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-chat-id': chatId.toString()
-                },
-                body: JSON.stringify(updateField)
-            });
+            // REATORAÇÃO: Atualiza o perfil diretamente no banco de dados, sem fetch.
+            const updatedProfile = await PlantProfile.findOneAndUpdate(
+                { _id: profileId, chatId: chatId }, // Garante que o usuário só pode editar seus próprios perfis
+                { $set: updateField },
+                { new: true }
+            );
 
-            if (!apiResponse.ok) throw new Error("Falha ao atualizar o perfil na API.");
+            if (!updatedProfile) throw new Error("Falha ao encontrar ou atualizar o perfil.");
 
             await UserState.deleteOne({ chatId }); // Limpa o estado
             return bot.sendMessage(chatId, `✅ ${successMessage}`, { parse_mode: 'MarkdownV2' });
 
         } catch (error) {
-            await UserState.deleteOne({ chatId }); // Limpa o estado em caso de erro
+            await UserState.deleteOne({ chatId });
             return bot.sendMessage(chatId, `❌ Erro: ${error.message}`);
         }
     }
 
-    // 2. SE NÃO HÁ ESTADO, PROCESSAR COMO UM COMANDO NORMAL
+    // Processa comandos normais se não houver estado de conversa
     if (text.startsWith('/')) {
         //... (código dos comandos /start, /addperfil, /listarperfis, etc.)
 
         // --- COMANDO /modificarperfil (NOVA LÓGICA) ---
-        if (text.startsWith('/modificarperfil ')) {
+       if (text.startsWith('/modificarperfil ')) {
             const plantName = text.substring(17).trim();
-            if (!plantName) return bot.sendMessage(chatId, "Formato inválido\. Use: /modificarperfil <Nome da Planta>");
+            if (!plantName) return bot.sendMessage(chatId, "Formato inválido. Use: /modificarperfil <Nome da Planta>", { parse_mode: 'MarkdownV2' });
 
             const profile = await PlantProfile.findOne({ name: plantName, chatId: chatId });
-            if (!profile) return bot.sendMessage(chatId, `Você não tem um perfil chamado "${escapeMarkdown(plantName)}"\.`);
+            if (!profile) return bot.sendMessage(chatId, `Você não tem um perfil chamado "${escapeMarkdown(plantName)}".`, { parse_mode: 'MarkdownV2' });
 
             const keyboard = {
                 inline_keyboard: [
-                    { text: '✏️ Nome', callback_data: `edit:name:${profile._id}` },
-                    { text: '💧 Umidade Mín.', callback_data: `edit:minHumidity:${profile._id}` }
-                ],
-
+                    [{ text: '✏️ Alterar Nome', callback_data: `edit:name:${profile._id}` }],
+                    [{ text: '💧 Alterar Umidade Mín.', callback_data: `edit:minHumidity:${profile._id}` }],
+                    [{ text: '⏳ Alterar Duração da Rega', callback_data: `edit:wateringDuration:${profile._id}` }]
+                ]
             };
 
             bot.sendMessage(chatId, `O que você deseja modificar no perfil *${escapeMarkdown(profile.name)}*?`, {
@@ -152,28 +141,17 @@ async function handleTextMessage(message) {
         }
         else if (text.startsWith('/removerperfil ')) {
             const plantName = text.substring(15).trim();
-            if (!plantName) return bot.sendMessage(chatId, "Formato inválido\. Use: /removerperfil <Nome da Planta>");
+            if (!plantName) return bot.sendMessage(chatId, "Formato inválido. Use: /removerperfil <Nome da Planta>", { parse_mode: 'MarkdownV2' });
 
             const safePlantName = escapeMarkdown(plantName);
 
-            // Encontra o perfil para obter o ID
-            const profile = await PlantProfile.findOne({ name: plantName, chatId: chatId });
-            if (!profile) return bot.sendMessage(chatId, `Você não tem um perfil chamado "${safePlantName}"\.`);
+            // REATORAÇÃO: Remove o perfil diretamente do banco de dados, sem fetch.
+            const deletedProfile = await PlantProfile.findOneAndDelete({ name: plantName, chatId: chatId });
 
-            // Chama nossa nova API DELETE
-            const apiResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/profiles/${profile._id}`, {
-                method: 'DELETE',
-                headers: {
-                    'x-chat-id': chatId.toString()
-                }
-            });
-
-            if (apiResponse.ok) {
-                bot.sendMessage(chatId, `✅ Perfil *${safePlantName}* removido com sucesso\!`);
+            if (deletedProfile) {
+                bot.sendMessage(chatId, `✅ Perfil *${safePlantName}* removido com sucesso!`, { parse_mode: 'MarkdownV2' });
             } else {
-                const errorData = await apiResponse.json();
-                console.error("Erro da API ao remover perfil:", errorData);
-                bot.sendMessage(chatId, `Ocorreu um erro ao remover o perfil\. Tente novamente\.`);
+                bot.sendMessage(chatId, `❌ Perfil "${safePlantName}" não encontrado.`, { parse_mode: 'MarkdownV2' });
             }
         }
         // --- COMANDO /addperfil ---
@@ -288,27 +266,25 @@ async function handleTextMessage(message) {
             });
             bot.sendMessage(chatId, `Comando de rega manual para "*${escapeMarkdown(profile.name)}*" enviado\\!`);
         }
-        //... (restante dos comandos: /listarperfis, /plantapadrao, etc.)
+
     }
 }
 
 // --- FUNÇÃO POST PRINCIPAL ATUALIZADA ---
 export async function POST(request) {
-    await dbConnect();
     try {
+        await dbConnect();
         const body = await request.json();
 
-        // Roteamento da requisição: é uma mensagem de texto ou um clique em botão?
         if (body.message) {
             await handleTextMessage(body.message);
         } else if (body.callback_query) {
             await handleCallbackQuery(body.callback_query);
         }
 
-        return NextResponse.json({ status: 'ok' }, { status: 200 });
+        return NextResponse.json({ status: 'ok' });
     } catch (error) {
         console.error("--- ERRO GERAL NO WEBHOOK DO TELEGRAM ---", error);
-        // Evita que o webhook quebre em caso de erro não tratado
         return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
     }
 }
