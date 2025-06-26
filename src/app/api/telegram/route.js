@@ -130,14 +130,15 @@ async function handleTextMessage(message) {
 
 Comandos Disponíveis:
 \`/addperfil <Nome>;<UmidadeMin>;<TempoSeg>\` \\- Adiciona um novo perfil\\.
-\`/modificarperfil <Nome>;<UmidadeMin>;<TempoSeg>\` \\- Adiciona um novo perfil\\.
-\`/deletarperfil <Nome>;<UmidadeMin>;<TempoSeg>\` \\- Adiciona um novo perfil\\.
+\`/modificarperfil <Nome>\` \\- Modifica um perfil\\.
+\`/removerperfil <Nome>\` \\- Remove um perfil\\.
 \`/listarperfis\` \\- Mostra todos os seus perfis\\.
 \`/plantapadrao <Nome da Planta>\` \\- Define qual perfil a rega automática deve seguir\\.
 \`/historico <Nome da Planta>\` \\- Mostra as últimas 3 regas da planta\\.
 \`/umidade\` \\- Mostra a última umidade registrada\\.
 \`/meuid\` \\- Mostra seu ID para login na web\\.
-\`/regar <Nome da Planta>\` \\- Aciona uma rega manual\\.`;
+\`/regar <Nome da Planta>\` \\- Aciona uma rega manual\\.
+\`/web \` \\- Redireciona para aplicação WEB\\.`;
 
             bot.sendMessage(chatId, welcomeMessage);
         }
@@ -156,6 +157,9 @@ Comandos Disponíveis:
                 bot.sendMessage(chatId, `❌ Perfil "${safePlantName}" não encontrado.`);
             }
         }
+         else if (text.startsWith('/web')) {
+            bot.sendMessage(`https://irrigador.vercel.app/`);
+         }
         // --- COMANDO /addperfil ---
         else if (text.startsWith('/addperfil ')) {
             const params = text.substring(11).split(';');
