@@ -158,7 +158,7 @@ Comandos Disponíveis:
             }
         }
          else if (text.startsWith('/web')) {
-            bot.sendMessage(`https://irrigador.vercel.app/`);
+            bot.sendMessage(chatId, `https://irrigador.vercel.app/`);
          }
         // --- COMANDO /addperfil ---
         else if (text.startsWith('/addperfil ')) {
