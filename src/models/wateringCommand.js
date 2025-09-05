@@ -5,8 +5,7 @@ const wateringCommandSchema = new mongoose.Schema({
   duration: { type: Number, required: true },
   executed: { type: Boolean, default: false },
   timestamp: { type: Date, default: Date.now },
-  
-  // --- CAMPO NOVO E CRUCIAL ---
+
   // Este campo irá armazenar o ID do documento do perfil da planta.
   plantProfileId: { 
     type: mongoose.Schema.Types.ObjectId, // O tipo especial do Mongoose para IDs
