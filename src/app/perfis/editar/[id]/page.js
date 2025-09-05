@@ -1,4 +1,5 @@
 // src/app/perfis/editar/[id]/page.js
+
 "use client";
 
 import { useState, useEffect } from 'react';
