@@ -18,8 +18,7 @@ export async function setDefaultProfile(formData) {
   revalidatePath('/perfis');
 }
 
-// NOVO: Server Action para deletar um perfil (AGORA EXPORTADA)
-export async function deleteProfile(formData) { // <--- CORREÇÃO: Adicionado "export"
+export async function deleteProfile(formData) {
     const profileId = formData.get('profileId');
 
     await dbConnect();
@@ -29,8 +28,7 @@ export async function deleteProfile(formData) { // <--- CORREÇÃO: Adicionado "
     revalidatePath('/perfis');
 }
 
-// NOVO: Server Action para atualizar um perfil (AGORA EXPORTADA)
-export async function updateProfile(formData) { // <--- CORREÇÃO: Adicionado "export"
+export async function updateProfile(formData) { 
     const profileId = formData.get('profileId');
     const name = formData.get('name');
     const minHumidity = formData.get('minHumidity');
