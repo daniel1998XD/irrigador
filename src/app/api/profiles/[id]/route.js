@@ -22,7 +22,7 @@ export async function GET(request, { params }) {
       return NextResponse.json({ error: 'Perfil não encontrado' }, { status: 404 });
     }
 
-    // Verificação de segurança: o perfil pertence ao usuário que está pedindo?
+    // Verificação de segurança
     if (profile.chatId!== chatId) {
       return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
     }
@@ -35,7 +35,7 @@ export async function GET(request, { params }) {
 }
 
 
-// Função para ATUALIZAR (modificar) um perfil existente
+// Função para ATUALIZAR um perfil existente
 export async function PUT(request, { params }) {
   const profileId = params.id;
   const chatId = request.headers.get('x-chat-id');
@@ -59,7 +59,7 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ error: 'Perfil não encontrado' }, { status: 404 });
     }
 
-    // Verificação de segurança CRUCIAL: o usuário é dono deste perfil?
+    // Verificação de segurança
     if (profile.chatId!== chatId) {
       return NextResponse.json({ error: 'Acesso negado. Você não pode modificar este perfil.' }, { status: 403 });
     }
@@ -94,22 +94,15 @@ export async function DELETE(request, { params }) {
     const profile = await PlantProfile.findById(profileId);
 
     if (!profile) {
-      // Se o perfil já não existe, consideramos a operação um sucesso idempotente.
+      // Se o perfil já não existe, consideramos a operação um sucesso
       return NextResponse.json({ message: 'Perfil não encontrado, nada a fazer.' }, { status: 200 });
     }
 
-    // Verificação de segurança CRUCIAL: o usuário é dono deste perfil?
+    // Verificação de segurança
     if (profile.chatId!== chatId) {
       return NextResponse.json({ error: 'Acesso negado. Você não pode deletar este perfil.' }, { status: 403 });
     }
 
-    // Se era o perfil padrão, precisamos garantir que nenhum perfil seja padrão.
-    // Uma lógica mais avançada poderia eleger outro perfil como padrão.
-    // Por simplicidade, apenas o removemos. O usuário terá que definir um novo padrão.
-    if (profile.isDefault) {
-        // Idealmente, o sistema deveria notificar o usuário que o perfil padrão foi removido.
-        // Isso pode ser feito no lado do cliente (bot ou web) que chama esta API.
-    }
 
     await PlantProfile.findByIdAndDelete(profileId);
 
