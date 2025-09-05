@@ -15,7 +15,6 @@ export default function LoginPage() {
       return;
     }
 
-    // O passo mais importante: salvamos o ID no "cofre" do navegador.
     localStorage.setItem('userChatId', chatId);
     
     // Redireciona o usuário para a página de perfis.
