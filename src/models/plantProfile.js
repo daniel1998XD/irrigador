@@ -5,7 +5,6 @@ const plantProfileSchema = new mongoose.Schema({
   minHumidity: { type: Number, required: true },
   wateringDuration: { type: Number, required: true },
   chatId: { type: String, required: true },
-  // ---- CAMPO NOVO ----
   isDefault: { type: Boolean, default: false } // Para marcar se este é o perfil padrão
 });
 
