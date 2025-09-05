@@ -81,7 +81,7 @@ async function handleTextMessage(message) {
                 successMessage = `Duração da rega alterada para *${escapeMarkdown(numValue.toString())}s*!`;
             }
 
-            // REATORAÇÃO: Atualiza o perfil diretamente no banco de dados, sem fetch.
+            // Atualiza o perfil diretamente no banco de dados, sem fetch.
             const updatedProfile = await PlantProfile.findOneAndUpdate(
                 { _id: profileId, chatId: chatId }, // Garante que o usuário só pode editar seus próprios perfis
                 { $set: updateField },
@@ -101,9 +101,6 @@ async function handleTextMessage(message) {
 
     // Processa comandos normais se não houver estado de conversa
     if (text.startsWith('/')) {
-        //... (código dos comandos /start, /addperfil, /listarperfis, etc.)
-
-        // --- COMANDO /modificarperfil (NOVA LÓGICA) ---
         if (text.startsWith('/modificarperfil ')) {
             const plantName = text.substring(17).trim();
             if (!plantName) return bot.sendMessage(chatId, "Formato inválido. Use: /modificarperfil <Nome da Planta>");
@@ -124,7 +121,6 @@ async function handleTextMessage(message) {
             });
         }
 
-        // --- COMANDO /removerperfil (JÁ IMPLEMENTADO ACIMA) ---
         if (text === '/start') {
             const welcomeMessage = `Olá\\! Bem\\-vindo ao Bot de Irrigação\\. 🌱
 
@@ -148,7 +144,7 @@ Comandos Disponíveis:
 
             const safePlantName = escapeMarkdown(plantName);
 
-            // REATORAÇÃO: Remove o perfil diretamente do banco de dados, sem fetch.
+            // Remove o perfil diretamente do banco de dados, sem fetch.
             const deletedProfile = await PlantProfile.findOneAndDelete({ name: plantName, chatId: chatId });
 
             if (deletedProfile) {
@@ -169,7 +165,6 @@ Comandos Disponíveis:
             const [name, minHumidity, wateringDuration] = params;
             await PlantProfile.create({ name, minHumidity: parseInt(minHumidity), wateringDuration: parseInt(wateringDuration), chatId });
 
-            // CORREÇÃO: Usamos a variável 'name' que acabamos de criar, e a escapamos.
             const safeName = escapeMarkdown(name);
             bot.sendMessage(chatId, `Perfil *${safeName}* adicionado com sucesso\\!`);
         }
@@ -211,7 +206,7 @@ Comandos Disponíveis:
             const profile = await PlantProfile.findOne({ name: plantName, chatId: chatId });
             if (!profile) return bot.sendMessage(chatId, `Você não tem um perfil chamado "${safePlantName}"\.`);
 
-            // Chama nossa nova API DELETE
+            // Chama API DELETE
             const apiResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/profiles/${profile._id}`, {
                 method: 'DELETE',
                 headers: {
@@ -263,7 +258,6 @@ Comandos Disponíveis:
                 }
             ]);
 
-            // O resultado da agregação é sempre um array.
             if (latestReading.length === 0) {
                 return bot.sendMessage(chatId, "Ainda não há nenhuma leitura de umidade registrada para os seus perfis.");
             }
@@ -319,7 +313,7 @@ Comandos Disponíveis:
     }
 }
 
-// --- FUNÇÃO POST PRINCIPAL ATUALIZADA ---
+// --- FUNÇÃO POST PRINCIPAL ---
 export async function POST(request) {
     try {
         await dbConnect();
