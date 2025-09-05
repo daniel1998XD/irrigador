@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
-import PlantProfile from '@/models/plantProfile'; // Importado para referência no aggregate
+import PlantProfile from '@/models/plantProfile';
 import HumidityLog from '@/models/humidityLog';
-import mongoose from 'mongoose'; // Importado para usar mongoose.Types.ObjectId
+import mongoose from 'mongoose'; 
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
@@ -15,20 +15,16 @@ export async function GET(request) {
   await dbConnect();
 
   try {
-    // Pipeline de Agregação para buscar e combinar os dados eficientemente
     const humidityHistory = await HumidityLog.aggregate([
-      // Estágio 1: Juntar (lookup) os dados do perfil da planta em cada log de umidade.
       // Isso funciona como um JOIN de SQL.
       {
         $lookup: {
-          from: 'plantprofiles', // O nome da coleção de perfis no MongoDB (geralmente o plural do model em minúsculas)
+          from: 'plantprofiles', // O nome da coleção de perfis
           localField: 'plantProfileId', // O campo no HumidityLog
           foreignField: '_id', // O campo no PlantProfile
           as: 'plantProfileInfo' // O nome do novo array que conterá os dados do perfil juntado
         }
       },
-      // Estágio 2: Desconstruir (unwind) o array 'plantProfileInfo'.
-      // Como cada log só tem um perfil, isso transforma o array em um objeto.
       // 'preserveNullAndEmptyArrays' garante que, se um perfil foi deletado, o log de umidade não seja descartado.
       {
         $unwind: {
@@ -36,21 +32,19 @@ export async function GET(request) {
           preserveNullAndEmptyArrays: true
         }
       },
-      // Estágio 3: Filtrar (match) para pegar apenas os logs cujo perfil associado pertence ao usuário (chatId).
-      // Esta é a verificação de segurança e personalização.
       {
         $match: {
           'plantProfileInfo.chatId': chatId
         }
       },
-      // Estágio 4: Ordenar (sort) os resultados por data, do mais recente para o mais antigo.
+      // Ordena os resultados por data, do mais recente para o mais antigo.
       {
         $sort: {
           timestamp: -1 // -1 para ordem decrescente
         }
       },
-      // Estágio 5: Projetar (project) o formato final dos dados que serão enviados.
-      // Isso limpa os dados e os molda para o que o frontend precisa.
+      //formato final dos dados que serão enviados.
+      // Isso limpa os dados e os molda para o frontend.
       {
         $project: {
           _id: 1, // Mantém o _id original do log
