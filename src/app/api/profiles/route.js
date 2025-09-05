@@ -5,7 +5,7 @@ import PlantProfile from '@/models/plantProfile';
 // Função para CRIAR um novo perfil
 export async function POST(request) {
   try {
-    // Lendo todos os dados do corpo (body) da requisição
+    // Lendo todos os dados do corpo da requisição
     const { name, minHumidity, wateringDuration, chatId } = await request.json();
 
     // Verificação se os dados essenciais foram recebidos
@@ -19,11 +19,11 @@ export async function POST(request) {
       name,
       minHumidity: parseInt(minHumidity, 10),
       wateringDuration: parseInt(wateringDuration, 10),
-      chatId: chatId, // chatId agora vem do corpo da requisição
+      chatId: chatId, 
       isDefault: false
     });
 
-    return NextResponse.json(newProfile, { status: 201 }); // 201 Created
+    return NextResponse.json(newProfile, { status: 201 }); 
 
   } catch (error) {
     console.error("Erro ao criar perfil:", error);
