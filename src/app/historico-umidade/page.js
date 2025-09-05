@@ -73,7 +73,6 @@ export default function GeneralHistoryPage() {
               {history.map(item => (
                 <tr key={item._id} style={{ borderBottom: '1px solid #eee' }}>
                   <td style={{ padding: '12px' }}>
-                    {/* ----- MUDANÇA AQUI ----- */}
                     {/* Lendo o campo 'plantName' que a API envia */}
                     <strong>{item.plantName}</strong>
                   </td>
