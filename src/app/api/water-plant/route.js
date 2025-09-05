@@ -16,13 +16,12 @@ export async function POST(request) {
             return NextResponse.json({ error: 'ID da planta e ID do chat são obrigatórios.' }, { status: 400 });
         }
 
-        // Passo de segurança CRUCIAL:
+        // Passo de segurança:
         // Verifica se o perfil da planta existe E se pertence ao usuário que fez a requisição.
         const profile = await PlantProfile.findOne({ _id: plantId, chatId: chatId.toString() });
 
         if (!profile) {
             // Se não encontrou, ou o perfil não existe ou o usuário não tem permissão.
-            // Por segurança, não damos detalhes do erro.
             return NextResponse.json({ error: 'Perfil não encontrado ou acesso negado.' }, { status: 404 });
         }
 
